@@ -181,7 +181,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           i_text               = |Reading ABAP { sy-tabix }/{ lines( lt_vrsd ) }|
           i_processed          = sy-tabix
           i_total              = lines( lt_vrsd )
-          i_output_immediately = abap_True ).
+          i_output_immediately = abap_true ).
       ENDIF.
 
       CASE ls_vrsd-objtype.
