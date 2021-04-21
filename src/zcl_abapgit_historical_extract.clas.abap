@@ -12,6 +12,29 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       RAISING
         zcx_abapgit_exception.
   PROTECTED SECTION.
+    TYPES: BEGIN OF ty_parts,
+             objtype  TYPE vrsd-objtype,
+             objname  TYPE vrsd-objname,
+             type     TYPE tadir-object,
+             name     TYPE tadir-obj_name,
+             devclass TYPE tadir-devclass,
+           END OF ty_parts.
+    TYPES ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY.
+    TYPES ty_vrsd_tt TYPE STANDARD TABLE OF vrsd WITH EMPTY KEY.
+
+    METHODS read_tadir
+      IMPORTING
+        it_packages     TYPE ty_devc_range
+      RETURNING
+        VALUE(rt_tadir) TYPE zif_abapgit_definitions=>ty_tadir_tt
+      RAISING
+        zcx_abapgit_exception.
+    METHODS determine_parts
+      IMPORTING it_tadir        TYPE zif_abapgit_definitions=>ty_tadir_tt
+      RETURNING VALUE(rt_parts) TYPE ty_parts_tt.
+    METHODS read_vrsd
+      IMPORTING it_parts       TYPE ty_parts_tt
+      RETURNING VALUE(rt_vrsd) TYPE ty_vrsd_tt.
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -20,7 +43,26 @@ ENDCLASS.
 CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
 
-  METHOD run.
+  METHOD determine_parts.
+
+    LOOP AT it_tadir INTO DATA(ls_tadir).
+      CASE ls_tadir-object.
+        WHEN 'PROG'.
+          APPEND VALUE #(
+            objtype  = 'REPS'
+            objname  = ls_tadir-obj_name
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+        WHEN OTHERS.
+          ASSERT 1 = 'todo'.
+      ENDCASE.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD read_tadir.
 
     SELECT devclass, parentcl
       FROM tdevc INTO TABLE @DATA(lt_tdevc)
@@ -31,63 +73,62 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     DATA(lo_dot) = zcl_abapgit_dot_abapgit=>build_default( ).
     lo_dot->set_folder_logic( 'FULL' ).
 
-    DATA lt_tadir TYPE zif_abapgit_definitions=>ty_tadir_tt.
     LOOP AT lt_tdevc INTO DATA(ls_tdevc).
       APPEND LINES OF zcl_abapgit_factory=>get_tadir( )->read(
         io_dot     = lo_dot
-        iv_package = ls_tdevc-devclass ) TO lt_tadir.
+        iv_package = ls_tdevc-devclass ) TO rt_tadir.
     ENDLOOP.
-    DELETE lt_tadir WHERE object <> 'PROG'.
+    DELETE rt_tadir WHERE object <> 'PROG'.
 
-    TYPES: BEGIN OF ty_parts,
-             objtype  TYPE vrsd-objtype,
-             objname  TYPE vrsd-objname,
-             type     TYPE tadir-object,
-             name     TYPE tadir-obj_name,
-             devclass TYPE tadir-devclass,
-           END OF ty_parts.
-    DATA lt_parts TYPE STANDARD TABLE OF ty_parts.
-    LOOP AT lt_tadir INTO DATA(ls_tadir).
-      CASE ls_tadir-object.
-        WHEN 'PROG'.
-          APPEND VALUE #(
-            objtype  = 'REPS'
-            objname  = ls_tadir-obj_name
-            type     = ls_tadir-object
-            name     = ls_tadir-obj_name
-            devclass = ls_tadir-devclass ) TO lt_parts.
-        WHEN OTHERS.
-          ASSERT 1 = 'todo'.
-      ENDCASE.
-    ENDLOOP.
+  ENDMETHOD.
 
-    IF lines( lt_parts ) = 0.
+
+  METHOD read_vrsd.
+
+    IF lines( it_parts ) = 0.
       RETURN.
     ENDIF.
-    SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
-      FOR ALL ENTRIES IN @lt_parts
-      WHERE objtype = @lt_parts-objtype
-      AND objname = @lt_parts-objname
+
+    SELECT * FROM vrsd INTO TABLE @rt_vrsd
+      FOR ALL ENTRIES IN @it_parts
+      WHERE objtype = @it_parts-objtype
+      AND objname = @it_parts-objname
       ORDER BY PRIMARY KEY.
+
+  ENDMETHOD.
+
+
+  METHOD run.
+
+    DATA(lt_tadir) = read_tadir( it_packages ).
+
+    DATA(lt_parts) = determine_parts( lt_tadir ).
+
+    DATA(lt_vrsd) = read_vrsd( lt_parts ).
 
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
     LOOP AT lt_vrsd INTO DATA(ls_vrsd).
+      CASE ls_vrsd-objtype.
+        WHEN 'REPS'.
 * note that this function module returns the full 255 character width source code
-      CALL FUNCTION 'SVRS_GET_REPS_FROM_OBJECT'
-        EXPORTING
-          object_name = ls_vrsd-objname
-          object_type = ls_vrsd-objtype
-          versno      = ls_vrsd-versno
-        TABLES
-          repos_tab   = lt_repos
-          trdir_tab   = lt_trdir
-        EXCEPTIONS
-          no_version  = 1
-          OTHERS      = 2.
-      IF sy-subrc <> 0.
-        BREAK-POINT.
-      ENDIF.
+          CALL FUNCTION 'SVRS_GET_REPS_FROM_OBJECT'
+            EXPORTING
+              object_name = ls_vrsd-objname
+              object_type = ls_vrsd-objtype
+              versno      = ls_vrsd-versno
+            TABLES
+              repos_tab   = lt_repos
+              trdir_tab   = lt_trdir
+            EXCEPTIONS
+              no_version  = 1
+              OTHERS      = 2.
+          IF sy-subrc <> 0.
+            BREAK-POINT.
+          ENDIF.
+        WHEN OTHERS.
+          ASSERT 1 = 'todo'.
+      ENDCASE.
     ENDLOOP.
 
   ENDMETHOD.
