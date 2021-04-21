@@ -62,8 +62,32 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             name     = ls_tadir-obj_name
             devclass = ls_tadir-devclass ) TO rt_parts.
         WHEN 'CLAS'.
-* CLSD is not needed
-* todo, 4 x CINC, dont serialize if empty, CCAU + CCDEF + CCIMP + CCMAC
+* note that the CLSD is not needed
+* 4 x CINC, dont serialize if empty, CCAU + CCDEF + CCIMP + CCMAC
+          APPEND VALUE #(
+            objtype  = 'CINC'
+            objname  = cl_oo_classname_service=>get_ccau_name( CONV #( ls_tadir-obj_name ) )
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+          APPEND VALUE #(
+            objtype  = 'CINC'
+            objname  = cl_oo_classname_service=>get_ccimp_name( CONV #( ls_tadir-obj_name ) )
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+          APPEND VALUE #(
+            objtype  = 'CINC'
+            objname  = cl_oo_classname_service=>get_ccdef_name( CONV #( ls_tadir-obj_name ) )
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+          APPEND VALUE #(
+            objtype  = 'CINC'
+            objname  = cl_oo_classname_service=>get_ccmac_name( CONV #( ls_tadir-obj_name ) )
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
           APPEND VALUE #(
             objtype  = 'CPUB'
             objname  = ls_tadir-obj_name
@@ -144,14 +168,13 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD run.
 
-    DATA(lt_tadir) = read_tadir( it_packages ).
-
-    DATA(lt_parts) = determine_parts( lt_tadir ).
-
-    DATA(lt_vrsd) = read_vrsd( lt_parts ).
-
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
+
+    DATA(lt_tadir) = read_tadir( it_packages ).
+    DATA(lt_parts) = determine_parts( lt_tadir ).
+    DATA(lt_vrsd) = read_vrsd( lt_parts ).
+
     LOOP AT lt_vrsd INTO DATA(ls_vrsd).
       CASE ls_vrsd-objtype.
         WHEN 'REPS' OR 'INTF' OR 'METH' OR 'CPRI' OR 'CPRO' OR 'CPUB' OR 'CINC'.
@@ -169,7 +192,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
               no_version  = 1
               OTHERS      = 2.
           IF sy-subrc <> 0.
-            BREAK-POINT.
+            CONTINUE.
           ENDIF.
         WHEN OTHERS.
           ASSERT 1 = 'todo'.
