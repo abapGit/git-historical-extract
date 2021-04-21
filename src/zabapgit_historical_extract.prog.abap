@@ -41,7 +41,8 @@ FORM run RAISING zcx_abapgit_exception.
   SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
     FOR ALL ENTRIES IN @lt_parts
     WHERE objtype = @lt_parts-objtype
-    AND objname = @lt_parts-objname.
+    AND objname = @lt_parts-objname
+    ORDER BY PRIMARY KEY.
 
   LOOP AT lt_vrsd INTO DATA(ls_vrsd).
 
