@@ -84,14 +84,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             devclass = ls_tadir-devclass ) TO rt_parts.
 * ? x METH
           DATA(lv_objname) = |{ ls_tadir-obj_name }%|.
-          SELECT DISTINCT objname FROM vrsd INTO TABLE @DATA(lt_methods)
+          SELECT DISTINCT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
             WHERE objtype = 'METH'
             AND objname LIKE @lv_objname
-            ORDER BY objname.
-          LOOP AT lt_methods INTO DATA(lv_method).
+            ORDER BY objtype, objname.
+          LOOP AT lt_methods INTO DATA(ls_method).
             APPEND VALUE #(
-              objtype  = 'METH'
-              objname  = lv_method
+              objtype  = ls_method-objtype
+              objname  = ls_method-objname
               type     = ls_tadir-object
               name     = ls_tadir-obj_name
               devclass = ls_tadir-devclass ) TO rt_parts.
