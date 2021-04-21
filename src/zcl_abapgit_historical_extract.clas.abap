@@ -54,6 +54,47 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             type     = ls_tadir-object
             name     = ls_tadir-obj_name
             devclass = ls_tadir-devclass ) TO rt_parts.
+        WHEN 'INTF'.
+          APPEND VALUE #(
+            objtype  = 'INTF'
+            objname  = ls_tadir-obj_name
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+        WHEN 'CLAS'.
+* CLSD is not needed
+* todo, 4 x CINC, dont serialize if empty, CCAU + CCDEF + CCIMP + CCMAC
+          APPEND VALUE #(
+            objtype  = 'CPUB'
+            objname  = ls_tadir-obj_name
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+          APPEND VALUE #(
+            objtype  = 'CPRO'
+            objname  = ls_tadir-obj_name
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+          APPEND VALUE #(
+            objtype  = 'CPRI'
+            objname  = ls_tadir-obj_name
+            type     = ls_tadir-object
+            name     = ls_tadir-obj_name
+            devclass = ls_tadir-devclass ) TO rt_parts.
+* ? x METH
+          DATA(lv_objname) = |{ ls_tadir-obj_name }%|.
+          SELECT DISTINCT objname FROM vrsd INTO TABLE @DATA(lt_methods)
+            WHERE objtype = 'METH'
+            AND objname LIKE @lv_objname.
+          LOOP AT lt_methods INTO DATA(lv_method).
+            APPEND VALUE #(
+              objtype  = 'METH'
+              objname  = lv_method
+              type     = ls_tadir-object
+              name     = ls_tadir-obj_name
+              devclass = ls_tadir-devclass ) TO rt_parts.
+          ENDLOOP.
         WHEN OTHERS.
           ASSERT 1 = 'todo'.
       ENDCASE.
@@ -78,7 +119,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         io_dot     = lo_dot
         iv_package = ls_tdevc-devclass ) TO rt_tadir.
     ENDLOOP.
-    DELETE rt_tadir WHERE object <> 'PROG'.
+    DELETE rt_tadir WHERE object <> 'PROG'
+      AND object <> 'INTF'
+      AND object <> 'CLAS'.
 
   ENDMETHOD.
 
@@ -110,8 +153,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
     LOOP AT lt_vrsd INTO DATA(ls_vrsd).
       CASE ls_vrsd-objtype.
-        WHEN 'REPS'.
+        WHEN 'REPS' OR 'INTF' OR 'METH' OR 'CPRI' OR 'CPRO' OR 'CPUB' OR 'CINC'.
 * note that this function module returns the full 255 character width source code
+* plus works for multiple object types
           CALL FUNCTION 'SVRS_GET_REPS_FROM_OBJECT'
             EXPORTING
               object_name = ls_vrsd-objname
