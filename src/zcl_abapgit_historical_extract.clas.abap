@@ -176,6 +176,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     DATA(lt_vrsd) = read_vrsd( lt_parts ).
 
     LOOP AT lt_vrsd INTO DATA(ls_vrsd).
+      IF sy-tabix MOD 20 = 0.
+        cl_progress_indicator=>progress_indicate(
+          i_text               = |Reading ABAP { sy-tabix }/{ lines( lt_vrsd ) }|
+          i_processed          = sy-tabix
+          i_total              = lines( lt_vrsd )
+          i_output_immediately = abap_True ).
+      ENDIF.
+
       CASE ls_vrsd-objtype.
         WHEN 'REPS' OR 'INTF' OR 'METH' OR 'CPRI' OR 'CPRO' OR 'CPUB' OR 'CINC'.
 * note that this function module returns the full 255 character width source code
