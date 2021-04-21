@@ -86,7 +86,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           DATA(lv_objname) = |{ ls_tadir-obj_name }%|.
           SELECT DISTINCT objname FROM vrsd INTO TABLE @DATA(lt_methods)
             WHERE objtype = 'METH'
-            AND objname LIKE @lv_objname.
+            AND objname LIKE @lv_objname
+            ORDER BY objname.
           LOOP AT lt_methods INTO DATA(lv_method).
             APPEND VALUE #(
               objtype  = 'METH'
