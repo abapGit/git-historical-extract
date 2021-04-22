@@ -23,7 +23,7 @@ CLASS ltcl_test IMPLEMENTATION.
 
 * todo
 
-    mo_cut->build( ).
+*    mo_cut->build( ).
 
   ENDMETHOD.
 

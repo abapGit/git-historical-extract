@@ -7,9 +7,15 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     TYPES:
       ty_devc_range TYPE RANGE OF tadir-devclass .
 
+    TYPES: BEGIN OF ty_result,
+             branch_name TYPE string,
+           END OF ty_result.
+
     METHODS run
       IMPORTING
-        !it_packages TYPE ty_devc_range
+        !it_packages     TYPE ty_devc_range
+      RETURNING
+        VALUE(rs_result) TYPE ty_result
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -24,25 +30,30 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       END OF ty_parts .
     TYPES:
       ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY .
-    TYPES: BEGIN OF ty_vrsd,
-             objtype TYPE vrsd-objtype,
-             objname TYPE vrsd-objname,
-             versno  TYPE vrsd-versno,
-             author  TYPE vrsd-author,
-             datum   TYPE vrsd-datum,
-             zeit    TYPE vrsd-zeit,
-           END OF ty_vrsd.
+    TYPES:
+      BEGIN OF ty_vrsd,
+        objtype TYPE vrsd-objtype,
+        objname TYPE vrsd-objname,
+        versno  TYPE vrsd-versno,
+        author  TYPE vrsd-author,
+        datum   TYPE vrsd-datum,
+        zeit    TYPE vrsd-zeit,
+      END OF ty_vrsd .
     TYPES:
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
+    TYPES:
+      BEGIN OF ty_sources,
+        objtype TYPE vrsd-objtype,
+        objname TYPE vrsd-objname,
+        versno  TYPE vrsd-versno,
+        source  TYPE string,
+      END OF ty_sources .
+    TYPES:
+      ty_sources_tt TYPE SORTED TABLE OF ty_sources WITH UNIQUE KEY objtype objname versno .
 
-    TYPES: BEGIN OF ty_sources,
-             objtype TYPE vrsd-objtype,
-             objname TYPE vrsd-objname,
-             versno  TYPE vrsd-versno,
-             source  TYPE string,
-           END OF ty_sources.
-    TYPES ty_sources_tt TYPE SORTED TABLE OF ty_sources WITH UNIQUE KEY objtype objname versno.
-
+    METHODS git_test
+      RAISING
+        zcx_abapgit_exception .
     METHODS read_tadir
       IMPORTING
         !it_packages    TYPE ty_devc_range
@@ -65,7 +76,11 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         !it_parts      TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
-    METHODS build.
+    METHODS build
+      IMPORTING
+        !is_tadir   TYPE zif_abapgit_definitions=>ty_tadir
+        !it_vrsd    TYPE ty_vrsd_tt
+        !it_sources TYPE ty_sources_tt .
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -163,6 +178,40 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD git_test.
+
+    DATA(lv_url) = |https://github.com/larshp/test-hist.git|.
+    DATA(lv_branch_name) = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
+
+* create new branch from default branch
+    DATA(ls_remote) = zcl_abapgit_git_porcelain=>pull_by_branch(
+      iv_url         = lv_url
+      iv_branch_name = zcl_abapgit_git_transport=>branches( lv_url )->get_head_symref( ) ).
+    zcl_abapgit_git_porcelain=>create_branch(
+      iv_url  = lv_url
+      iv_name = lv_branch_name
+      iv_from = ls_remote-commit ).
+
+*  push
+    DATA(ls_comment) = VALUE zif_abapgit_definitions=>ty_comment(
+      committer = VALUE #( name = 'asdf' email = 'asdf@localhost' )
+      author    = VALUE #( name = 'asdf' email = 'asdf@localhost' )
+      comment   = 'hello world' ).
+    DATA(lo_stage) = NEW zcl_abapgit_stage( ).
+    lo_stage->add( iv_path     = '/'
+                   iv_filename = 'hello.txt'
+                   iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( 'moo' ) ).
+    zcl_abapgit_git_porcelain=>push(
+      is_comment     = ls_comment
+      io_stage       = lo_stage
+      it_old_objects = ls_remote-objects
+      iv_parent      = ls_remote-commit
+      iv_url         = lv_url
+      iv_branch_name = lv_branch_name ).
+
+  ENDMETHOD.
+
+
   METHOD read_sources.
 
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
@@ -246,10 +295,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD run.
 
+* some inspiration in https://github.com/abaplint/abaplint-sci-client/blob/main/src/zabaplint_dependencies.prog.abap
+
     DATA(lt_tadir) = read_tadir( it_packages ).
 
     LOOP AT lt_tadir INTO DATA(ls_tadir).
-      IF sy-tabix MOD 10 = 0.
+      IF sy-tabix MOD 5 = 0.
         cl_progress_indicator=>progress_indicate(
           i_text               = |Processing objects, { sy-tabix }/{ lines( lt_tadir ) }|
           i_processed          = sy-tabix
@@ -261,9 +312,13 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       DATA(lt_vrsd) = read_versions( lt_parts ).
       DATA(lt_sources) = read_sources( lt_vrsd ).
 
-      build( ).
-
+      build(
+        is_tadir   = ls_tadir
+        it_vrsd    = lt_vrsd
+        it_sources = lt_sources ).
     ENDLOOP.
+
+    git_test( ).
 
   ENDMETHOD.
 ENDCLASS.
