@@ -26,6 +26,14 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     TYPES:
       ty_vrsd_tt TYPE STANDARD TABLE OF vrsd WITH EMPTY KEY .
 
+    TYPES: BEGIN OF ty_sources,
+             objtype TYPE vrsd-objtype,
+             objname TYPE vrsd-objname,
+             versno  TYPE vrsd-versno,
+             source  TYPE string,
+           END OF ty_sources.
+    TYPES ty_sources_tt TYPE SORTED TABLE OF ty_sources WITH UNIQUE KEY objtype objname versno.
+
     METHODS read_tadir
       IMPORTING
         !it_packages    TYPE ty_devc_range
@@ -40,18 +48,26 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         VALUE(rt_parts) TYPE ty_parts_tt .
     METHODS read_sources
       IMPORTING
-        !it_vrsd TYPE ty_vrsd_tt .
+        !it_vrsd          TYPE ty_vrsd_tt
+      RETURNING
+        VALUE(rt_sources) TYPE ty_sources_tt .
     METHODS read_versions
       IMPORTING
         !it_parts      TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
+    METHODS build.
   PRIVATE SECTION.
 ENDCLASS.
 
 
 
 CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
+
+
+  METHOD build.
+* todo
+  ENDMETHOD.
 
 
   METHOD determine_parts.
@@ -142,8 +158,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
+    DATA lv_source TYPE string.
 
-* read ABAP
     LOOP AT it_vrsd INTO DATA(ls_vrsd).
       CASE ls_vrsd-objtype.
         WHEN 'REPS' OR 'INTF' OR 'METH' OR 'CPRI' OR 'CPRO' OR 'CPUB' OR 'CINC'.
@@ -161,8 +177,15 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
               no_version  = 1
               OTHERS      = 2.
           IF sy-subrc <> 0.
-            CONTINUE.
+            CLEAR lv_source.
+          ELSE.
+            lv_source = concat_lines_of( table = lt_repos sep = |\n| ).
           ENDIF.
+          INSERT VALUE #(
+            objtype = ls_vrsd-objname
+            objname = ls_vrsd-objtype
+            versno  = ls_vrsd-versno
+            source  = lv_source ) INTO TABLE rt_sources.
         WHEN OTHERS.
           ASSERT 1 = 'todo'.
       ENDCASE.
@@ -217,7 +240,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     LOOP AT lt_tadir INTO DATA(ls_tadir).
       IF sy-tabix MOD 10 = 0.
         cl_progress_indicator=>progress_indicate(
-          i_text               = |Processing objects { sy-tabix }/{ lines( lt_tadir ) }|
+          i_text               = |Processing objects, { sy-tabix }/{ lines( lt_tadir ) }|
           i_processed          = sy-tabix
           i_total              = lines( lt_tadir )
           i_output_immediately = abap_true ).
@@ -225,7 +248,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
       DATA(lt_parts) = determine_parts( ls_tadir ).
       DATA(lt_vrsd) = read_versions( lt_parts ).
-      read_sources( lt_vrsd ).
+      DATA(lt_sources) = read_sources( lt_vrsd ).
+
+      build( ).
 
     ENDLOOP.
 
