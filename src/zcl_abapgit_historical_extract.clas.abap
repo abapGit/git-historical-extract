@@ -38,18 +38,10 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         author  TYPE vrsd-author,
         datum   TYPE vrsd-datum,
         zeit    TYPE vrsd-zeit,
+        source  TYPE string,
       END OF ty_vrsd .
     TYPES:
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
-    TYPES:
-      BEGIN OF ty_sources,
-        objtype TYPE vrsd-objtype,
-        objname TYPE vrsd-objname,
-        versno  TYPE vrsd-versno,
-        source  TYPE string,
-      END OF ty_sources .
-    TYPES:
-      ty_sources_tt TYPE SORTED TABLE OF ty_sources WITH UNIQUE KEY objtype objname versno .
 
     METHODS git_test
       RAISING
@@ -67,10 +59,8 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
     METHODS read_sources
-      IMPORTING
-        !it_vrsd          TYPE ty_vrsd_tt
-      RETURNING
-        VALUE(rt_sources) TYPE ty_sources_tt .
+      CHANGING
+        !ct_vrsd TYPE ty_vrsd_tt.
     METHODS read_versions
       IMPORTING
         !it_parts      TYPE ty_parts_tt
@@ -79,8 +69,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     METHODS build
       IMPORTING
         !is_tadir   TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd    TYPE ty_vrsd_tt
-        !it_sources TYPE ty_sources_tt .
+        !it_vrsd    TYPE ty_vrsd_tt.
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -90,8 +79,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
 
   METHOD build.
-* todo
-    RETURN.
+
+    CASE is_tadir-object.
+      WHEN 'CLAS'.
+        BREAK-POINT.
+    ENDCASE.
+
   ENDMETHOD.
 
 
@@ -180,6 +173,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD git_test.
 
+* some inspiration in https://github.com/abaplint/abaplint-sci-client/blob/main/src/zabaplint_dependencies.prog.abap
+
     DATA(lv_url) = |https://github.com/larshp/test-hist.git|.
     DATA(lv_branch_name) = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
 
@@ -218,33 +213,26 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
     DATA lv_source TYPE string.
 
-    LOOP AT it_vrsd INTO DATA(ls_vrsd).
-      CASE ls_vrsd-objtype.
+    LOOP AT ct_vrsd ASSIGNING FIELD-SYMBOL(<ls_vrsd>).
+      CASE <ls_vrsd>-objtype.
         WHEN 'REPS' OR 'INTF' OR 'METH' OR 'CPRI' OR 'CPRO' OR 'CPUB' OR 'CINC'.
 * note that this function module returns the full 255 character width source code
 * plus works for multiple object types
           CALL FUNCTION 'SVRS_GET_REPS_FROM_OBJECT'
             EXPORTING
-              object_name = ls_vrsd-objname
-              object_type = ls_vrsd-objtype
-              versno      = ls_vrsd-versno
+              object_name = <ls_vrsd>-objname
+              object_type = <ls_vrsd>-objtype
+              versno      = <ls_vrsd>-versno
             TABLES
               repos_tab   = lt_repos
               trdir_tab   = lt_trdir
             EXCEPTIONS
               no_version  = 1
               OTHERS      = 2.
-          IF sy-subrc <> 0.
-            CLEAR lv_source.
-          ELSE.
-            lv_source = concat_lines_of( table = lt_repos
-                                         sep   = |\n| ).
+          IF sy-subrc = 0.
+            <ls_vrsd>-source = concat_lines_of( table = lt_repos
+                                                sep   = |\n| ).
           ENDIF.
-          INSERT VALUE #(
-            objtype = ls_vrsd-objname
-            objname = ls_vrsd-objtype
-            versno  = ls_vrsd-versno
-            source  = lv_source ) INTO TABLE rt_sources.
         WHEN OTHERS.
           ASSERT 1 = 'todo'.
       ENDCASE.
@@ -284,7 +272,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     ENDIF.
 
     SELECT objtype, objname, versno, author, datum, zeit
-      FROM vrsd INTO TABLE @rt_vrsd
+      FROM vrsd INTO CORRESPONDING FIELDS OF TABLE @rt_vrsd
       FOR ALL ENTRIES IN @it_parts
       WHERE objtype = @it_parts-objtype
       AND objname = @it_parts-objname
@@ -294,8 +282,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
 
   METHOD run.
-
-* some inspiration in https://github.com/abaplint/abaplint-sci-client/blob/main/src/zabaplint_dependencies.prog.abap
 
     DATA(lt_tadir) = read_tadir( it_packages ).
 
@@ -310,12 +296,11 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
       DATA(lt_parts) = determine_parts( ls_tadir ).
       DATA(lt_vrsd) = read_versions( lt_parts ).
-      DATA(lt_sources) = read_sources( lt_vrsd ).
+      read_sources( CHANGING ct_vrsd = lt_vrsd ).
 
       build(
         is_tadir   = ls_tadir
-        it_vrsd    = lt_vrsd
-        it_sources = lt_sources ).
+        it_vrsd    = lt_vrsd ).
     ENDLOOP.
 
     git_test( ).
