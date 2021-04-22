@@ -46,6 +46,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   METHOD determine_parts.
 
     LOOP AT it_tadir INTO DATA(ls_tadir).
+      IF sy-tabix MOD 100 = 0.
+        cl_progress_indicator=>progress_indicate(
+          i_text               = |Determine parts { sy-tabix }/{ lines( it_tadir ) }|
+          i_processed          = sy-tabix
+          i_total              = lines( it_tadir )
+          i_output_immediately = abap_true ).
+      ENDIF.
+
       CASE ls_tadir-object.
         WHEN 'PROG'.
           APPEND VALUE #(
@@ -108,10 +116,11 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             devclass = ls_tadir-devclass ) TO rt_parts.
 * ? x METH
           DATA(lv_objname) = |{ ls_tadir-obj_name }%|.
-          SELECT DISTINCT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
+          SELECT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
             WHERE objtype = 'METH'
             AND objname LIKE @lv_objname
             ORDER BY objtype, objname.
+          DELETE ADJACENT DUPLICATES FROM lt_methods COMPARING objname.
           LOOP AT lt_methods INTO DATA(ls_method).
             APPEND VALUE #(
               objtype  = ls_method-objtype
