@@ -211,7 +211,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
-    DATA lv_source TYPE string.
+    
 
     LOOP AT ct_vrsd ASSIGNING FIELD-SYMBOL(<ls_vrsd>).
       CASE <ls_vrsd>-objtype.
