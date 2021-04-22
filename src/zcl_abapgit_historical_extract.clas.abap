@@ -19,7 +19,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
-
+    TYPES ty_timestamp TYPE c LENGTH 14.
     TYPES:
       BEGIN OF ty_parts,
         objtype  TYPE vrsd-objtype,
@@ -42,6 +42,15 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       END OF ty_vrsd .
     TYPES:
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
+
+    TYPES:
+      BEGIN OF ty_extended.
+        INCLUDE TYPE ty_vrsd.
+    TYPES: from TYPE ty_timestamp,
+        to   TYPE ty_timestamp,
+      END OF ty_extended .
+    TYPES:
+      ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
 
     METHODS git_test
       RAISING
@@ -68,8 +77,21 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
     METHODS build
       IMPORTING
-        !is_tadir   TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd    TYPE ty_vrsd_tt.
+        !is_tadir TYPE zif_abapgit_definitions=>ty_tadir
+        !it_vrsd  TYPE ty_vrsd_tt.
+
+    TYPES ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY.
+    METHODS build_timestamps
+      IMPORTING
+        it_extended          TYPE ty_extended_tt
+      RETURNING
+        VALUE(rt_timestamps) TYPE ty_timestamps_tt.
+    METHODS extend
+      IMPORTING
+        it_vrsd            TYPE ty_vrsd_tt
+      RETURNING
+        VALUE(rt_extended) TYPE ty_extended_tt.
+
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -80,10 +102,24 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD build.
 
+    DATA(lt_extended) = extend( it_vrsd ).
+    DATA(lt_timestamps) = build_timestamps( lt_extended ).
+
     CASE is_tadir-object.
       WHEN 'CLAS'.
-        BREAK-POINT.
+        LOOP AT lt_timestamps INTO DATA(lv_timestamp).
+
+        ENDLOOP.
     ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD build_timestamps.
+
+    LOOP AT it_extended ASSIGNING FIELD-SYMBOL(<ls_vrsd>).
+      INSERT <ls_vrsd>-from INTO TABLE rt_timestamps.
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -167,6 +203,32 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       WHEN OTHERS.
         ASSERT 1 = 'todo'.
     ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD extend.
+
+    DATA lv_next TYPE vrsd-versno.
+
+    LOOP AT it_vrsd ASSIGNING FIELD-SYMBOL(<ls_vrsd>).
+      DATA(ls_extended) = CORRESPONDING ty_extended( <ls_vrsd> ).
+      ls_extended-from = |{ <ls_vrsd>-datum }{ <ls_vrsd>-zeit }|.
+      APPEND ls_extended TO rt_extended.
+    ENDLOOP.
+
+    LOOP AT rt_extended ASSIGNING FIELD-SYMBOL(<ls_extended>).
+      lv_next = <ls_extended>-versno + 1.
+      READ TABLE rt_extended INTO DATA(ls_to) WITH KEY
+        objtype = <ls_extended>-objtype
+        objname = <ls_extended>-objname
+        versno = lv_next.
+      IF sy-subrc = 0.
+        <ls_extended>-to = ls_to-from.
+      ELSE.
+        <ls_extended>-to = '99991231235959'.
+      ENDIF.
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -301,9 +363,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       build(
         is_tadir   = ls_tadir
         it_vrsd    = lt_vrsd ).
+      BREAK-POINT.
     ENDLOOP.
 
-    git_test( ).
+*    git_test( ).
 
   ENDMETHOD.
 ENDCLASS.

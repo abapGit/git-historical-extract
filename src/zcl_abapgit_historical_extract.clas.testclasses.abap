@@ -25,11 +25,15 @@ CLASS ltcl_test IMPLEMENTATION.
       object   = 'CLAS'
       obj_name = 'ZCL_FOOBAR' ).
     DATA(lt_vrsd) = VALUE zcl_abapgit_historical_extract=>ty_vrsd_tt(
-      ( objtype = 'CPUB' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'hello' ) ).
+      ( objtype = 'CPUB' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpub' )
+      ( objtype = 'CPRO' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpro' )
+      ( objtype = 'CPUB' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpri' ) ).
 
     mo_cut->build(
       is_tadir   = ls_tadir
       it_vrsd    = lt_vrsd ).
+
+    DATA(lv_expected) = |cpub\ncpro\ncpri\nCLASS zcl_foobar IMPLEMENTATION.\nENDCLASS.|.
 
   ENDMETHOD.
 
