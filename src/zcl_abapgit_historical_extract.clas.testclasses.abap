@@ -24,16 +24,21 @@ CLASS ltcl_test IMPLEMENTATION.
     DATA(ls_tadir) = VALUE zif_abapgit_definitions=>ty_tadir(
       object   = 'CLAS'
       obj_name = 'ZCL_FOOBAR' ).
+
     DATA(lt_vrsd) = VALUE zcl_abapgit_historical_extract=>ty_vrsd_tt(
       ( objtype = 'CPUB' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpub' )
       ( objtype = 'CPRO' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpro' )
-      ( objtype = 'CPUB' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpri' ) ).
+      ( objtype = 'CPRI' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpri' ) ).
 
-    mo_cut->build(
-      is_tadir   = ls_tadir
-      it_vrsd    = lt_vrsd ).
+    DATA(lv_result) = mo_cut->build(
+      is_tadir = ls_tadir
+      it_vrsd  = lt_vrsd ).
 
     DATA(lv_expected) = |cpub\ncpro\ncpri\nCLASS zcl_foobar IMPLEMENTATION.\nENDCLASS.|.
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lv_result
+      exp = lv_expected ).
 
   ENDMETHOD.
 

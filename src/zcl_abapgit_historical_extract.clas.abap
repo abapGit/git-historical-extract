@@ -77,8 +77,10 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
     METHODS build
       IMPORTING
-        !is_tadir TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd  TYPE ty_vrsd_tt.
+        !is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
+        !it_vrsd         TYPE ty_vrsd_tt
+      RETURNING
+        VALUE(rv_result) TYPE string.
 
     TYPES ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY.
     METHODS build_timestamps
@@ -103,14 +105,50 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   METHOD build.
 
     DATA(lt_extended) = extend( it_vrsd ).
+    DATA ls_extended LIKE LINE OF lt_extended.
     DATA(lt_timestamps) = build_timestamps( lt_extended ).
 
-    CASE is_tadir-object.
-      WHEN 'CLAS'.
-        LOOP AT lt_timestamps INTO DATA(lv_timestamp).
+    LOOP AT lt_timestamps INTO DATA(lv_timestamp).
+      CLEAR rv_result.
+      DATA(lt_filtered) = lt_extended.
+      DELETE lt_filtered WHERE from < lv_timestamp.
+      DELETE lt_filtered WHERE to > lv_timestamp.
+* todo, there might still be multiple left in lt_filtered, make sure its the first/last taken?
 
-        ENDLOOP.
-    ENDCASE.
+      CASE is_tadir-object.
+        WHEN 'CLAS'.
+          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPUB'.
+          IF sy-subrc = 0.
+            rv_result = |{ ls_extended-source }\n|.
+          ENDIF.
+
+          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRO'.
+          IF sy-subrc = 0.
+            rv_result = |{ rv_result }{ ls_extended-source }\n|.
+          ENDIF.
+
+          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRI'.
+          IF sy-subrc = 0.
+            rv_result = |{ rv_result }{ ls_extended-source }\n|.
+          ENDIF.
+
+          rv_result = |{ rv_result }CLASS { to_lower( is_tadir-obj_name ) } IMPLEMENTATION.\n|.
+* todo
+          rv_result = |{ rv_result }ENDCLASS.|.
+        WHEN 'INTF'.
+          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'INTF'.
+          IF sy-subrc = 0.
+            rv_result = ls_extended-source.
+          ENDIF.
+        WHEN 'PROG'.
+          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'REPS'.
+          IF sy-subrc = 0.
+            rv_result = ls_extended-source.
+          ENDIF.
+      ENDCASE.
+    ENDLOOP.
+
+* todo, add rv_result to new result table structure
 
   ENDMETHOD.
 
@@ -363,7 +401,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       build(
         is_tadir   = ls_tadir
         it_vrsd    = lt_vrsd ).
-      BREAK-POINT.
     ENDLOOP.
 
 *    git_test( ).
