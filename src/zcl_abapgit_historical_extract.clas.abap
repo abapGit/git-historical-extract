@@ -24,8 +24,16 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       END OF ty_parts .
     TYPES:
       ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY .
+    TYPES: BEGIN OF ty_vrsd,
+             objtype TYPE vrsd-objtype,
+             objname TYPE vrsd-objname,
+             versno  TYPE vrsd-versno,
+             author  TYPE vrsd-author,
+             datum   TYPE vrsd-datum,
+             zeit    TYPE vrsd-zeit,
+           END OF ty_vrsd.
     TYPES:
-      ty_vrsd_tt TYPE STANDARD TABLE OF vrsd WITH EMPTY KEY .
+      ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
 
     TYPES: BEGIN OF ty_sources,
              objtype TYPE vrsd-objtype,
@@ -135,11 +143,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           devclass = is_tadir-devclass ) TO rt_parts.
 * ? x METH
         DATA(lv_objname) = |{ is_tadir-obj_name WIDTH = 30 }%|.
-        SELECT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
+        SELECT DISTINCT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
           WHERE objtype = 'METH'
           AND objname LIKE @lv_objname
           ORDER BY objtype, objname.
-        DELETE ADJACENT DUPLICATES FROM lt_methods COMPARING objname.
         LOOP AT lt_methods INTO DATA(ls_method).
           APPEND VALUE #(
             objtype  = ls_method-objtype
@@ -180,7 +187,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           IF sy-subrc <> 0.
             CLEAR lv_source.
           ELSE.
-            lv_source = concat_lines_of( table = lt_repos sep = |\n| ).
+            lv_source = concat_lines_of( table = lt_repos
+                                         sep   = |\n| ).
           ENDIF.
           INSERT VALUE #(
             objtype = ls_vrsd-objname
@@ -225,7 +233,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT * FROM vrsd INTO TABLE @rt_vrsd
+    SELECT objtype, objname, versno, author, datum, zeit
+      FROM vrsd INTO TABLE @rt_vrsd
       FOR ALL ENTRIES IN @it_parts
       WHERE objtype = @it_parts-objtype
       AND objname = @it_parts-objname
