@@ -115,7 +115,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             name     = ls_tadir-obj_name
             devclass = ls_tadir-devclass ) TO rt_parts.
 * ? x METH
-          DATA(lv_objname) = |{ ls_tadir-obj_name }%|.
+          DATA(lv_objname) = |{ ls_tadir-obj_name WIDTH = 30 }%|.
           SELECT objtype, objname FROM vrsd INTO TABLE @DATA(lt_methods)
             WHERE objtype = 'METH'
             AND objname LIKE @lv_objname
