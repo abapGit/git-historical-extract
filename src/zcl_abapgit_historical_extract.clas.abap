@@ -4,13 +4,14 @@ CLASS zcl_abapgit_historical_extract DEFINITION
 
   PUBLIC SECTION.
 
-    TYPES ty_devc_range TYPE RANGE OF tadir-devclass.
+    TYPES:
+      ty_devc_range TYPE RANGE OF tadir-devclass .
 
     METHODS run
       IMPORTING
         !it_packages TYPE ty_devc_range
       RAISING
-        zcx_abapgit_exception.
+        zcx_abapgit_exception .
   PROTECTED SECTION.
 
     TYPES:
