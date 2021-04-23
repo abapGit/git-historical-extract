@@ -30,14 +30,18 @@ CLASS ltcl_test IMPLEMENTATION.
       ( objtype = 'CPRO' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpro' )
       ( objtype = 'CPRI' objname = 'ZCL_FOOBAR' versno = '00001' datum = sy-datum zeit = sy-uzeit source = 'cpri' ) ).
 
-    DATA(lv_result) = mo_cut->build(
+    DATA(lt_files) = mo_cut->build(
       is_tadir = ls_tadir
       it_vrsd  = lt_vrsd ).
 
     DATA(lv_expected) = |cpub\ncpro\ncpri\nCLASS zcl_foobar IMPLEMENTATION.\nENDCLASS.|.
 
     cl_abap_unit_assert=>assert_equals(
-      act = lv_result
+      act = lines( lt_files )
+      exp = 1 ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = lt_files[ 1 ]-source
       exp = lv_expected ).
 
   ENDMETHOD.

@@ -19,7 +19,9 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
-    TYPES ty_timestamp TYPE c LENGTH 14.
+
+    TYPES:
+      ty_timestamp TYPE c LENGTH 14 .
     TYPES:
       BEGIN OF ty_parts,
         objtype  TYPE vrsd-objtype,
@@ -42,7 +44,6 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       END OF ty_vrsd .
     TYPES:
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
-
     TYPES:
       BEGIN OF ty_extended.
         INCLUDE TYPE ty_vrsd.
@@ -51,10 +52,43 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       END OF ty_extended .
     TYPES:
       ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
+    TYPES:
+      ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY .
 
+    TYPES: BEGIN OF ty_file,
+             filename TYPE string,
+             source   TYPE string,
+           END OF ty_file.
+
+    TYPES: ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY.
+
+    METHODS build
+      IMPORTING
+        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
+        !it_vrsd        TYPE ty_vrsd_tt
+      RETURNING
+        VALUE(rt_files) TYPE ty_files_tt .
+    METHODS build_timestamps
+      IMPORTING
+        !it_extended         TYPE ty_extended_tt
+      RETURNING
+        VALUE(rt_timestamps) TYPE ty_timestamps_tt .
+    METHODS determine_parts
+      IMPORTING
+        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
+      RETURNING
+        VALUE(rt_parts) TYPE ty_parts_tt .
+    METHODS extend
+      IMPORTING
+        !it_vrsd           TYPE ty_vrsd_tt
+      RETURNING
+        VALUE(rt_extended) TYPE ty_extended_tt .
     METHODS git_test
       RAISING
         zcx_abapgit_exception .
+    METHODS read_sources
+      CHANGING
+        !ct_vrsd TYPE ty_vrsd_tt .
     METHODS read_tadir
       IMPORTING
         !it_packages    TYPE ty_devc_range
@@ -62,38 +96,11 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         VALUE(rt_tadir) TYPE zif_abapgit_definitions=>ty_tadir_tt
       RAISING
         zcx_abapgit_exception .
-    METHODS determine_parts
-      IMPORTING
-        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
-      RETURNING
-        VALUE(rt_parts) TYPE ty_parts_tt .
-    METHODS read_sources
-      CHANGING
-        !ct_vrsd TYPE ty_vrsd_tt.
     METHODS read_versions
       IMPORTING
         !it_parts      TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
-    METHODS build
-      IMPORTING
-        !is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd         TYPE ty_vrsd_tt
-      RETURNING
-        VALUE(rv_result) TYPE string.
-
-    TYPES ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY.
-    METHODS build_timestamps
-      IMPORTING
-        it_extended          TYPE ty_extended_tt
-      RETURNING
-        VALUE(rt_timestamps) TYPE ty_timestamps_tt.
-    METHODS extend
-      IMPORTING
-        it_vrsd            TYPE ty_vrsd_tt
-      RETURNING
-        VALUE(rt_extended) TYPE ty_extended_tt.
-
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -104,12 +111,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD build.
 
+    DATA ls_file LIKE LINE OF rt_files.
+
     DATA(lt_extended) = extend( it_vrsd ).
     DATA ls_extended LIKE LINE OF lt_extended.
     DATA(lt_timestamps) = build_timestamps( lt_extended ).
 
     LOOP AT lt_timestamps INTO DATA(lv_timestamp).
-      CLEAR rv_result.
+      CLEAR ls_file.
       DATA(lt_filtered) = lt_extended.
       DELETE lt_filtered WHERE from < lv_timestamp.
       DELETE lt_filtered WHERE to > lv_timestamp.
@@ -119,36 +128,35 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         WHEN 'CLAS'.
           READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPUB'.
           IF sy-subrc = 0.
-            rv_result = |{ ls_extended-source }\n|.
+            ls_file-source = |{ ls_extended-source }\n|.
           ENDIF.
 
           READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRO'.
           IF sy-subrc = 0.
-            rv_result = |{ rv_result }{ ls_extended-source }\n|.
+            ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
 
           READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRI'.
           IF sy-subrc = 0.
-            rv_result = |{ rv_result }{ ls_extended-source }\n|.
+            ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
 
-          rv_result = |{ rv_result }CLASS { to_lower( is_tadir-obj_name ) } IMPLEMENTATION.\n|.
+          ls_file-source = |{ ls_file-source }CLASS { to_lower( is_tadir-obj_name ) } IMPLEMENTATION.\n|.
 * todo
-          rv_result = |{ rv_result }ENDCLASS.|.
+          ls_file-source = |{ ls_file-source }ENDCLASS.|.
         WHEN 'INTF'.
           READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'INTF'.
           IF sy-subrc = 0.
-            rv_result = ls_extended-source.
+            ls_file-source = ls_extended-source.
           ENDIF.
         WHEN 'PROG'.
           READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'REPS'.
           IF sy-subrc = 0.
-            rv_result = ls_extended-source.
+            ls_file-source = ls_extended-source.
           ENDIF.
       ENDCASE.
+      APPEND ls_file TO rt_files.
     ENDLOOP.
-
-* todo, add rv_result to new result table structure
 
   ENDMETHOD.
 
