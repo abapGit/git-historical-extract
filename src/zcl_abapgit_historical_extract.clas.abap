@@ -10,6 +10,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     METHODS run
       IMPORTING
         !it_packages TYPE ty_devc_range
+        !iv_skip_git TYPE abap_bool
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -48,14 +49,18 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
     TYPES:
       ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY .
+    TYPES:
+      BEGIN OF ty_file,
+        filename  TYPE string,
+        source    TYPE string,
+        timestamp TYPE ty_timestamp,
+      END OF ty_file .
+    TYPES:
+      ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY .
 
-    TYPES: BEGIN OF ty_file,
-             filename  TYPE string,
-             source    TYPE string,
-             timestamp TYPE ty_timestamp,
-           END OF ty_file.
-
-    TYPES: ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY.
+    DATA mv_url TYPE string .
+    DATA mv_branch_name TYPE string .
+    DATA ms_remote TYPE zcl_abapgit_git_porcelain=>ty_pull_result.
 
     METHODS build
       IMPORTING
@@ -78,7 +83,9 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         !it_vrsd           TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_extended) TYPE ty_extended_tt .
-    METHODS git_test
+    METHODS git_push
+      IMPORTING
+        !it_files TYPE ty_files_tt
       RAISING
         zcx_abapgit_exception .
     METHODS read_sources
@@ -282,38 +289,45 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD git_test.
+  METHOD git_push.
 
 * some inspiration in https://github.com/abaplint/abaplint-sci-client/blob/main/src/zabaplint_dependencies.prog.abap
 
-    DATA(lv_url) = |https://github.com/larshp/test-hist.git|.
-    DATA(lv_branch_name) = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
-
+    IF ms_remote IS INITIAL.
 * create new branch from default branch
-    DATA(ls_remote) = zcl_abapgit_git_porcelain=>pull_by_branch(
-      iv_url         = lv_url
-      iv_branch_name = zcl_abapgit_git_transport=>branches( lv_url )->get_head_symref( ) ).
-    zcl_abapgit_git_porcelain=>create_branch(
-      iv_url  = lv_url
-      iv_name = lv_branch_name
-      iv_from = ls_remote-commit ).
+      ms_remote = zcl_abapgit_git_porcelain=>pull_by_branch(
+        iv_url         = mv_url
+        iv_branch_name = zcl_abapgit_git_transport=>branches( mv_url )->get_head_symref( ) ).
+      zcl_abapgit_git_porcelain=>create_branch(
+        iv_url  = mv_url
+        iv_name = mv_branch_name
+        iv_from = ms_remote-commit ).
+    ENDIF.
 
+    LOOP AT it_files INTO DATA(ls_file).
 *  push
-    DATA(ls_comment) = VALUE zif_abapgit_definitions=>ty_comment(
-      committer = VALUE #( name = 'asdf' email = 'asdf@localhost' )
-      author    = VALUE #( name = 'asdf' email = 'asdf@localhost' )
-      comment   = 'hello world' ).
-    DATA(lo_stage) = NEW zcl_abapgit_stage( ).
-    lo_stage->add( iv_path     = '/'
-                   iv_filename = 'hello.txt'
-                   iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( 'moo' ) ).
-    zcl_abapgit_git_porcelain=>push(
-      is_comment     = ls_comment
-      io_stage       = lo_stage
-      it_old_objects = ls_remote-objects
-      iv_parent      = ls_remote-commit
-      iv_url         = lv_url
-      iv_branch_name = lv_branch_name ).
+      DATA(ls_comment) = VALUE zif_abapgit_definitions=>ty_comment(
+        committer = VALUE #( name = 'asdf' email = 'asdf@localhost' )
+        author    = VALUE #( name = 'asdf' email = 'asdf@localhost' )
+        comment   = |{ ls_file-filename }{ ls_file-timestamp }| ).
+      DATA(lo_stage) = NEW zcl_abapgit_stage( ).
+      lo_stage->add( iv_path     = '/'
+                     iv_filename = ls_file-filename
+                     iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ) ).
+
+      DATA(ls_push_result) = zcl_abapgit_git_porcelain=>push(
+        is_comment     = ls_comment
+        io_stage       = lo_stage
+        it_old_objects = ms_remote-objects
+        iv_parent      = ms_remote-commit
+        iv_url         = mv_url
+        iv_branch_name = mv_branch_name ).
+
+* prepare for next push
+      ms_remote-files = ls_push_result-new_files.
+      ms_remote-objects = ls_push_result-new_objects.
+      ms_remote-commit = ls_push_result-branch.
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -389,32 +403,35 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       AND objname = @it_parts-objname
       ORDER BY PRIMARY KEY.
 
+    read_sources( CHANGING ct_vrsd = rt_vrsd ).
+
   ENDMETHOD.
 
 
   METHOD run.
 
+    CLEAR ms_remote.
+    mv_url = |https://github.com/larshp/test-hist.git|.
+    mv_branch_name = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
+
     DATA(lt_tadir) = read_tadir( it_packages ).
 
     LOOP AT lt_tadir INTO DATA(ls_tadir).
-      IF sy-tabix MOD 5 = 0.
-        cl_progress_indicator=>progress_indicate(
-          i_text               = |Processing objects, { sy-tabix }/{ lines( lt_tadir ) }|
-          i_processed          = sy-tabix
-          i_total              = lines( lt_tadir )
-          i_output_immediately = abap_true ).
-      ENDIF.
+      cl_progress_indicator=>progress_indicate(
+        i_text               = |Processing objects, { sy-tabix }/{ lines( lt_tadir ) }|
+        i_processed          = sy-tabix
+        i_total              = lines( lt_tadir )
+        i_output_immediately = abap_true ).
 
       DATA(lt_parts) = determine_parts( ls_tadir ).
       DATA(lt_vrsd) = read_versions( lt_parts ).
-      read_sources( CHANGING ct_vrsd = lt_vrsd ).
 
-      build(
+      DATA(lt_files) = build(
         is_tadir = ls_tadir
         it_vrsd  = lt_vrsd ).
-    ENDLOOP.
 
-*    git_test( ).
+      git_push( lt_files ).
+    ENDLOOP.
 
   ENDMETHOD.
 ENDCLASS.
