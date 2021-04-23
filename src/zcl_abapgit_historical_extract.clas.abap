@@ -120,23 +120,21 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     LOOP AT lt_timestamps INTO DATA(lv_timestamp).
       CLEAR ls_file.
       DATA(lt_filtered) = lt_extended.
-      DELETE lt_filtered WHERE from < lv_timestamp.
-      DELETE lt_filtered WHERE to > lv_timestamp.
-* todo, there might still be multiple left in lt_filtered, make sure its the first/last taken?
+      DELETE lt_filtered WHERE to <= lv_timestamp.
 
       CASE is_tadir-object.
         WHEN 'CLAS'.
-          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPUB'.
+          READ TABLE lt_filtered INTO ls_extended WITH KEY objtype = 'CPUB'.
           IF sy-subrc = 0.
             ls_file-source = |{ ls_extended-source }\n|.
           ENDIF.
 
-          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRO'.
+          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'CPRO'.
           IF sy-subrc = 0.
             ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
 
-          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'CPRI'.
+          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'CPRI'.
           IF sy-subrc = 0.
             ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
@@ -145,12 +143,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 * todo
           ls_file-source = |{ ls_file-source }ENDCLASS.|.
         WHEN 'INTF'.
-          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'INTF'.
+          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'INTF'.
           IF sy-subrc = 0.
             ls_file-source = ls_extended-source.
           ENDIF.
         WHEN 'PROG'.
-          READ TABLE lt_extended INTO ls_extended WITH KEY objtype = 'REPS'.
+          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'REPS'.
           IF sy-subrc = 0.
             ls_file-source = ls_extended-source.
           ENDIF.
@@ -275,6 +273,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         <ls_extended>-to = '99991231235959'.
       ENDIF.
     ENDLOOP.
+
+    SORT rt_extended BY versno.
 
   ENDMETHOD.
 
