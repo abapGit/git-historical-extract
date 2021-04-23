@@ -121,6 +121,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       CLEAR ls_file.
       DATA(lt_filtered) = lt_extended.
       DELETE lt_filtered WHERE to <= lv_timestamp.
+      DELETE lt_filtered WHERE from > lv_timestamp.
 
       CASE is_tadir-object.
         WHEN 'CLAS'.
@@ -129,26 +130,30 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             ls_file-source = |{ ls_extended-source }\n|.
           ENDIF.
 
-          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'CPRO'.
+          READ TABLE lt_filtered INTO ls_extended WITH KEY objtype = 'CPRO'.
           IF sy-subrc = 0.
             ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
 
-          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'CPRI'.
+          READ TABLE lt_filtered INTO ls_extended WITH KEY objtype = 'CPRI'.
           IF sy-subrc = 0.
             ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDIF.
 
           ls_file-source = |{ ls_file-source }CLASS { to_lower( is_tadir-obj_name ) } IMPLEMENTATION.\n|.
-* todo
+          LOOP AT lt_filtered INTO ls_extended WHERE objtype = 'METH'.
+* todo, this seems wrong, the LOOP might find too much
+            ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
+          ENDLOOP.
+
           ls_file-source = |{ ls_file-source }ENDCLASS.|.
         WHEN 'INTF'.
-          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'INTF'.
+          READ TABLE lt_filtered INTO ls_extended WITH KEY objtype = 'INTF'.
           IF sy-subrc = 0.
             ls_file-source = ls_extended-source.
           ENDIF.
         WHEN 'PROG'.
-          READ TABLE lt_filtered  INTO ls_extended WITH KEY objtype = 'REPS'.
+          READ TABLE lt_filtered INTO ls_extended WITH KEY objtype = 'REPS'.
           IF sy-subrc = 0.
             ls_file-source = ls_extended-source.
           ENDIF.
@@ -274,7 +279,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    SORT rt_extended BY versno.
+    SORT rt_extended BY objtype objname versno.
 
   ENDMETHOD.
 
