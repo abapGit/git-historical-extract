@@ -7,15 +7,9 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     TYPES:
       ty_devc_range TYPE RANGE OF tadir-devclass .
 
-    TYPES: BEGIN OF ty_result,
-             branch_name TYPE string,
-           END OF ty_result.
-
     METHODS run
       IMPORTING
-        !it_packages     TYPE ty_devc_range
-      RETURNING
-        VALUE(rs_result) TYPE ty_result
+        !it_packages TYPE ty_devc_range
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -56,8 +50,9 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY .
 
     TYPES: BEGIN OF ty_file,
-             filename TYPE string,
-             source   TYPE string,
+             filename  TYPE string,
+             source    TYPE string,
+             timestamp TYPE ty_timestamp,
            END OF ty_file.
 
     TYPES: ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY.
@@ -142,7 +137,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
           ls_file-source = |{ ls_file-source }CLASS { to_lower( is_tadir-obj_name ) } IMPLEMENTATION.\n|.
           LOOP AT lt_filtered INTO ls_extended WHERE objtype = 'METH'.
-* todo, this seems wrong, the LOOP might find too much
+* todo, this seems wrong, the LOOP might find too much?
             ls_file-source = |{ ls_file-source }{ ls_extended-source }\n|.
           ENDLOOP.
 
@@ -158,6 +153,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
             ls_file-source = ls_extended-source.
           ENDIF.
       ENDCASE.
+
+      ls_file-filename = 'todo.txt'.
+      ls_file-timestamp = lv_timestamp.
       APPEND ls_file TO rt_files.
     ENDLOOP.
 
@@ -412,8 +410,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       read_sources( CHANGING ct_vrsd = lt_vrsd ).
 
       build(
-        is_tadir   = ls_tadir
-        it_vrsd    = lt_vrsd ).
+        is_tadir = ls_tadir
+        it_vrsd  = lt_vrsd ).
     ENDLOOP.
 
 *    git_test( ).
