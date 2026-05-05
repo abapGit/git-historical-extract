@@ -22,6 +22,7 @@ ENDCLASS.
 
 CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
+
   METHOD run.
 
     SELECT trkorr FROM e070
@@ -43,7 +44,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       LOOP AT lt_list INTO DATA(ls_list).
         zcl_abapgit_historical_objects=>read(
           iv_objtype = ls_list-object
-          iv_objname = ls_list-obj_name
+          iv_objname = CONV #( ls_list-obj_name )
           iv_korrnum = ls_trkorr-trkorr ).
       ENDLOOP.
 
@@ -51,5 +52,4 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
-
 ENDCLASS.
