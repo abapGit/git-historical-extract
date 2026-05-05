@@ -80,6 +80,8 @@ CLASS zcl_abapgit_historical_objects IMPLEMENTATION.
 
     CASE is_tadir-object.
       WHEN 'CLAS'.
+        ls_file-filename = |{ to_lower( is_tadir-obj_name ) }.clas.abap|.
+
         READ TABLE it_vrsd INTO ls_extended WITH KEY objtype = 'CPUB'.
         IF sy-subrc = 0.
           ls_file-source = |{ ls_extended-source }\n|.
@@ -103,18 +105,21 @@ CLASS zcl_abapgit_historical_objects IMPLEMENTATION.
 
         ls_file-source = |{ ls_file-source }ENDCLASS.|.
       WHEN 'INTF'.
+        ls_file-filename = |{ to_lower( is_tadir-obj_name ) }.intf.abap|.
+
         READ TABLE it_vrsd INTO ls_extended WITH KEY objtype = 'INTF'.
         IF sy-subrc = 0.
           ls_file-source = ls_extended-source.
         ENDIF.
       WHEN 'PROG'.
+        ls_file-filename = |{ to_lower( is_tadir-obj_name ) }.prog.abap|.
+
         READ TABLE it_vrsd INTO ls_extended WITH KEY objtype = 'REPS'.
         IF sy-subrc = 0.
           ls_file-source = ls_extended-source.
         ENDIF.
     ENDCASE.
 
-    ls_file-filename = 'todo.txt'.
     INSERT ls_file INTO TABLE rt_files.
 
   ENDMETHOD.
