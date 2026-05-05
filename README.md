@@ -2,6 +2,8 @@
 Extract historical ABAP objects to git
 
 * Objects will be placed according to current package structure, not historical
-* Deleted objects are not taken into account
+* Deleted objects are not taken into account?
 * Traditional SAP GUI
 * Folder logic = 'FULL'
+* Full R3TR objects, doesnt respect LIMU
+* Only custom objects
