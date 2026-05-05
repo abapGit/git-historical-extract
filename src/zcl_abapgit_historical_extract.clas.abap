@@ -434,7 +434,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
     LOOP AT lt_trkorr INTO DATA(ls_trkorr).
       cl_progress_indicator=>progress_indicate(
-        i_text               = |Processing transports, { sy-tabix }/{ lines( lt_trkorr ) }|
+        i_text               = |Processing transport { ls_trkorr-trkorr }, { sy-tabix }/{ lines( lt_trkorr ) }|
         i_processed          = sy-tabix
         i_total              = lines( lt_trkorr )
         i_output_immediately = abap_true ).
