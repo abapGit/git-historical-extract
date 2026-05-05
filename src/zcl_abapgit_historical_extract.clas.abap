@@ -41,14 +41,14 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
     TYPES
       BEGIN OF ty_extended.
-        INCLUDE TYPE ty_vrsd.
+    INCLUDE TYPE ty_vrsd.
     TYPES: from TYPE ty_timestamp,
-        to   TYPE ty_timestamp,
-      END OF ty_extended .
+           to   TYPE ty_timestamp,
+           END OF ty_extended .
     TYPES
       ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
     TYPES
-      ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE EMPTY KEY .
+      ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE KEY table_line.
     TYPES:
       BEGIN OF ty_file,
         filename  TYPE string,
@@ -97,6 +97,8 @@ CLASS zcl_abapgit_historical_extract DEFINITION
       CHANGING
         ct_vrsd TYPE ty_vrsd_tt .
 
+    TYPES ty_devc_range TYPE RANGE OF devclass.
+
     METHODS read_tadir
       IMPORTING
         it_packages     TYPE ty_devc_range
@@ -110,7 +112,6 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         it_parts       TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
-
   PRIVATE SECTION.
 ENDCLASS.
 
