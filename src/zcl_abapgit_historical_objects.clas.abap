@@ -29,7 +29,20 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
     TYPES
       ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY .
 
+    TYPES:
+      BEGIN OF ty_vrsd,
+        objtype TYPE vrsd-objtype,
+        objname TYPE vrsd-objname,
+        versno  TYPE vrsd-versno,
+        korrnum TYPE vrsd-korrnum,
+        author  TYPE vrsd-author,
+        datum   TYPE vrsd-datum,
+        zeit    TYPE vrsd-zeit,
+        source  TYPE string,
+      END OF ty_vrsd .
 
+    TYPES
+      ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
 
     METHODS build
       IMPORTING
@@ -43,20 +56,6 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
-
-    TYPES:
-      BEGIN OF ty_vrsd,
-        objtype TYPE vrsd-objtype,
-        objname TYPE vrsd-objname,
-        versno  TYPE vrsd-versno,
-        korrnum TYPE vrsd-korrnum,
-        author  TYPE vrsd-author,
-        datum   TYPE vrsd-datum,
-        zeit    TYPE vrsd-zeit,
-        source  TYPE string,
-      END OF ty_vrsd .
-    TYPES
-      ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
 
     METHODS read_versions
       IMPORTING
@@ -76,6 +75,7 @@ CLASS zcl_abapgit_historical_objects IMPLEMENTATION.
 
     DATA ls_file LIKE LINE OF rt_files.
     DATA ls_extended LIKE LINE OF it_vrsd.
+
 
 
     CASE is_tadir-object.
