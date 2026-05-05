@@ -432,14 +432,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       AND strkorr = ''
       ORDER BY PRIMARY KEY.
 
-    LOOP AT lt_trkorr INTO DATA(lv_trkorr).
+    LOOP AT lt_trkorr INTO DATA(ls_trkorr).
       cl_progress_indicator=>progress_indicate(
         i_text               = |Processing transports, { sy-tabix }/{ lines( lt_trkorr ) }|
         i_processed          = sy-tabix
         i_total              = lines( lt_trkorr )
         i_output_immediately = abap_true ).
 
-      DATA(lt_list) = zcl_abapgit_factory=>get_cts_api( )->list_r3tr_by_request( lv_trkorr ).
+      DATA(lt_list) = zcl_abapgit_factory=>get_cts_api( )->list_r3tr_by_request( ls_trkorr-trkorr ).
 
 
       " DATA(lt_parts) = determine_parts( ls_tadir ).
