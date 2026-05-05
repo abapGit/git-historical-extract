@@ -438,8 +438,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         i_total              = lines( lt_trkorr )
         i_output_immediately = abap_true ).
 
-      zcl_abapgit_factory=>get_cts_api( )->get_r3tr_obj_for_limu_obj( ).
-
+      DATA(lt_list) = zcl_abapgit_factory=>get_cts_api( )->list_r3tr_by_request( lv_trkorr ).
 
 
       " DATA(lt_parts) = determine_parts( ls_tadir ).
