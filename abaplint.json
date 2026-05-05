@@ -24,12 +24,14 @@
     "errorNamespace": "^(Z|Y|LCL_|TY_|LIF_)"
   },
   "rules": {
+    "avoid_use": false,
+    "select_performance": false,
+
     "7bit_ascii": true,
     "abapdoc": false,
     "allowed_object_naming": true,
     "allowed_object_types": true,
     "ambiguous_statement": true,
-    "avoid_use": true,
     "begin_end_names": true,
     "begin_single_include": true,
     "call_transaction_authority_check": true,
@@ -160,7 +162,6 @@
     "remove_descriptions": true,
     "rfc_error_handling": true,
     "select_add_order_by": true,
-    "select_performance": true,
     "selection_screen_naming": true,
     "sequential_blank": true,
     "short_case": true,
