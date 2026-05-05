@@ -1,7 +1,6 @@
 {
   "global": {
     "files": "/src/**/*.*",
-    "exclude": [],
     "skipGeneratedGatewayClasses": true,
     "skipGeneratedPersistentClasses": true,
     "skipGeneratedFunctionGroups": true,
@@ -22,9 +21,7 @@
   ],
   "syntax": {
     "version": "v740sp08",
-    "errorNamespace": "^(Z|Y|LCL_|TY_|LIF_)",
-    "globalConstants": [],
-    "globalMacros": []
+    "errorNamespace": "^(Z|Y|LCL_|TY_|LIF_)"
   },
   "rules": {
     "7bit_ascii": true,
@@ -41,11 +38,11 @@
     "check_comments": true,
     "check_ddic": true,
     "check_include": true,
-    "check_no_handler_pragma": true,
     "check_subrc": {
       "openDataset": true,
       "authorityCheck": true,
       "selectSingle": true,
+      "deleteDatabase": true,
       "selectTable": false,
       "updateDatabase": true,
       "insertDatabase": true,
@@ -100,10 +97,8 @@
     "line_length": true,
     "line_only_punc": true,
     "local_class_naming": true,
-    "local_testclass_location": true,
     "local_variable_names": true,
     "main_file_contents": true,
-    "many_parenthesis": true,
     "max_one_method_parameter_per_line": true,
     "max_one_statement": true,
     "message_exists": true,
