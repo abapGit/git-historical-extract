@@ -48,7 +48,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
     TYPES:
       ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
     TYPES:
-      ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE DEFAULT KEY .
+      ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE EMPTY KEY .
     TYPES:
       BEGIN OF ty_file,
         filename  TYPE string,
