@@ -28,7 +28,7 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         name     TYPE tadir-obj_name,
         devclass TYPE tadir-devclass,
       END OF ty_parts .
-    TYPES:
+    TYPES
       ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY .
     TYPES:
       BEGIN OF ty_vrsd,
@@ -41,7 +41,7 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         zeit    TYPE vrsd-zeit,
         source  TYPE string,
       END OF ty_vrsd .
-    TYPES:
+    TYPES
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
 
     CLASS-METHODS build
@@ -216,8 +216,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       AND objname = @iv_objname
       AND korrnum = @iv_korrnum.
     IF sy-subrc <> 0.
+      " non handled object types, todo
       " then its a deletion? maybe?
-      BREAK-POINT.
+      RETURN.
     ENDIF.
 
     DATA(ls_tadir) = VALUE zif_abapgit_definitions=>ty_tadir(
