@@ -1,8 +1,8 @@
 REPORT zabapgit_historical_extract.
 
-TABLES: tadir, sscrfields.
+TABLES: e070, sscrfields.
 
-SELECT-OPTIONS s_devc FOR tadir-devclass OBLIGATORY.
+SELECT-OPTIONS s_trkorr FOR e070-trkorr OBLIGATORY.
 
 PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git'.
 PARAMETERS p_skip TYPE abap_bool AS CHECKBOX DEFAULT abap_true.
@@ -29,9 +29,9 @@ AT SELECTION-SCREEN.
 FORM extract.
   TRY.
       NEW zcl_abapgit_historical_extract( )->run(
-        it_packages = s_devc[]
-        iv_url      = p_gurl
-        iv_skip_git = p_skip ).
+        it_transports = s_trkorr[]
+        iv_url        = p_gurl
+        iv_skip_git   = p_skip ).
     CATCH zcx_abapgit_exception INTO DATA(lx_error).
       MESSAGE lx_error TYPE 'E'.
   ENDTRY.

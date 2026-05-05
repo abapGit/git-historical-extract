@@ -4,13 +4,13 @@ CLASS zcl_abapgit_historical_extract DEFINITION
 
   PUBLIC SECTION.
 
-    TYPES ty_devc_range TYPE RANGE OF tadir-devclass .
+    TYPES ty_trkorr_range TYPE RANGE OF e070-trkorr .
 
     METHODS run
       IMPORTING
-        !it_packages TYPE ty_devc_range
-        iv_url       TYPE string
-        !iv_skip_git TYPE abap_bool
+        it_transports TYPE ty_trkorr_range
+        iv_url        TYPE string
+        iv_skip_git   TYPE abap_bool
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -64,42 +64,42 @@ CLASS zcl_abapgit_historical_extract DEFINITION
 
     METHODS build
       IMPORTING
-        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd        TYPE ty_vrsd_tt
+        is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
+        it_vrsd         TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_files) TYPE ty_files_tt .
 
     METHODS build_timestamps
       IMPORTING
-        !it_extended         TYPE ty_extended_tt
+        it_extended          TYPE ty_extended_tt
       RETURNING
         VALUE(rt_timestamps) TYPE ty_timestamps_tt .
 
     METHODS determine_parts
       IMPORTING
-        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
+        is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
 
     METHODS extend
       IMPORTING
-        !it_vrsd           TYPE ty_vrsd_tt
+        it_vrsd            TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_extended) TYPE ty_extended_tt .
 
     METHODS git_push
       IMPORTING
-        !it_files TYPE ty_files_tt
+        it_files TYPE ty_files_tt
       RAISING
         zcx_abapgit_exception .
 
     METHODS read_sources
       CHANGING
-        !ct_vrsd TYPE ty_vrsd_tt .
+        ct_vrsd TYPE ty_vrsd_tt .
 
     METHODS read_tadir
       IMPORTING
-        !it_packages    TYPE ty_devc_range
+        it_packages     TYPE ty_devc_range
       RETURNING
         VALUE(rt_tadir) TYPE zif_abapgit_definitions=>ty_tadir_tt
       RAISING
@@ -107,7 +107,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
 
     METHODS read_versions
       IMPORTING
-        !it_parts      TYPE ty_parts_tt
+        it_parts       TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
 
@@ -423,23 +423,29 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     mv_url = iv_url.
     mv_branch_name = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
 
-    DATA(lt_tadir) = read_tadir( it_packages ).
+    SELECT trkorr FROM e070
+      INTO TABLE @DATA(lt_trkorr)
+      WHERE trkorr IN @it_transports
+      AND trstatus = @zif_abapgit_cts_api=>c_transport_status-released
+      AND trfunction = @zif_abapgit_cts_api=>c_transport_type-wb_request
+      AND strkorr = ''
+      ORDER BY PRIMARY KEY.
 
-    LOOP AT lt_tadir INTO DATA(ls_tadir).
+    LOOP AT lt_trkorr INTO DATA(lv_trkorr).
       cl_progress_indicator=>progress_indicate(
-        i_text               = |Processing objects, { sy-tabix }/{ lines( lt_tadir ) }|
+        i_text               = |Processing transports, { sy-tabix }/{ lines( lt_trkorr ) }|
         i_processed          = sy-tabix
-        i_total              = lines( lt_tadir )
+        i_total              = lines( lt_trkorr )
         i_output_immediately = abap_true ).
 
-      DATA(lt_parts) = determine_parts( ls_tadir ).
-      DATA(lt_vrsd) = read_versions( lt_parts ).
+      " DATA(lt_parts) = determine_parts( ls_tadir ).
+      " DATA(lt_vrsd) = read_versions( lt_parts ).
 
-      DATA(lt_files) = build(
-        is_tadir = ls_tadir
-        it_vrsd  = lt_vrsd ).
+      " DATA(lt_files) = build(
+      "   is_tadir = ls_tadir
+      "   it_vrsd  = lt_vrsd ).
 
-      git_push( lt_files ).
+      " git_push( lt_files ).
     ENDLOOP.
 
   ENDMETHOD.
