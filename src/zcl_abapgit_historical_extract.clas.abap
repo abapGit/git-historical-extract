@@ -4,18 +4,18 @@ CLASS zcl_abapgit_historical_extract DEFINITION
 
   PUBLIC SECTION.
 
-    TYPES:
-      ty_devc_range TYPE RANGE OF tadir-devclass .
+    TYPES ty_devc_range TYPE RANGE OF tadir-devclass .
 
     METHODS run
       IMPORTING
         !it_packages TYPE ty_devc_range
+        iv_url       TYPE string
         !iv_skip_git TYPE abap_bool
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
 
-    TYPES:
+    TYPES
       ty_timestamp TYPE c LENGTH 14 .
     TYPES:
       BEGIN OF ty_parts,
@@ -25,7 +25,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         name     TYPE tadir-obj_name,
         devclass TYPE tadir-devclass,
       END OF ty_parts .
-    TYPES:
+    TYPES
       ty_parts_tt TYPE STANDARD TABLE OF ty_parts WITH EMPTY KEY .
     TYPES:
       BEGIN OF ty_vrsd,
@@ -37,17 +37,17 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         zeit    TYPE vrsd-zeit,
         source  TYPE string,
       END OF ty_vrsd .
-    TYPES:
+    TYPES
       ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
-    TYPES:
+    TYPES
       BEGIN OF ty_extended.
         INCLUDE TYPE ty_vrsd.
     TYPES: from TYPE ty_timestamp,
         to   TYPE ty_timestamp,
       END OF ty_extended .
-    TYPES:
+    TYPES
       ty_extended_tt TYPE STANDARD TABLE OF ty_extended WITH EMPTY KEY .
-    TYPES:
+    TYPES
       ty_timestamps_tt TYPE SORTED TABLE OF ty_timestamp WITH UNIQUE EMPTY KEY .
     TYPES:
       BEGIN OF ty_file,
@@ -55,7 +55,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         source    TYPE string,
         timestamp TYPE ty_timestamp,
       END OF ty_file .
-    TYPES:
+    TYPES
       ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY .
 
     DATA mv_url TYPE string .
@@ -68,29 +68,35 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         !it_vrsd        TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_files) TYPE ty_files_tt .
+
     METHODS build_timestamps
       IMPORTING
         !it_extended         TYPE ty_extended_tt
       RETURNING
         VALUE(rt_timestamps) TYPE ty_timestamps_tt .
+
     METHODS determine_parts
       IMPORTING
         !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
+
     METHODS extend
       IMPORTING
         !it_vrsd           TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_extended) TYPE ty_extended_tt .
+
     METHODS git_push
       IMPORTING
         !it_files TYPE ty_files_tt
       RAISING
         zcx_abapgit_exception .
+
     METHODS read_sources
       CHANGING
         !ct_vrsd TYPE ty_vrsd_tt .
+
     METHODS read_tadir
       IMPORTING
         !it_packages    TYPE ty_devc_range
@@ -98,11 +104,13 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         VALUE(rt_tadir) TYPE zif_abapgit_definitions=>ty_tadir_tt
       RAISING
         zcx_abapgit_exception .
+
     METHODS read_versions
       IMPORTING
         !it_parts      TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
+
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -306,7 +314,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
     LOOP AT it_files INTO DATA(ls_file).
 *  push
-      DATA(ls_comment) = VALUE zif_abapgit_definitions=>ty_comment(
+      DATA(ls_comment) = VALUE zif_abapgit_git_definitions=>ty_comment(
         committer = VALUE #( name = 'asdf' email = 'asdf@localhost' )
         author    = VALUE #( name = 'asdf' email = 'asdf@localhost' )
         comment   = |{ ls_file-filename }{ ls_file-timestamp }| ).
@@ -411,7 +419,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   METHOD run.
 
     CLEAR ms_remote.
-    mv_url = |https://github.com/larshp/test-hist.git|.
+
+    mv_url = iv_url.
     mv_branch_name = |refs/heads/{ sy-sysid }_{ sy-datum }_{ sy-uzeit }|.
 
     DATA(lt_tadir) = read_tadir( it_packages ).
