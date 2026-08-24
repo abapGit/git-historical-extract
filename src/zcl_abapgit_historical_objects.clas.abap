@@ -42,16 +42,20 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         it_vrsd         TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt .
+
     CLASS-METHODS determine_parts
       IMPORTING
         is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
+
     CLASS-METHODS read_versions
       IMPORTING
         it_parts       TYPE ty_parts_tt
+        iv_korrnum     TYPE vrsd-korrnum
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
+
     CLASS-METHODS read_sources
       CHANGING
         ct_vrsd TYPE ty_vrsd_tt .
@@ -232,7 +236,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       devclass = 'TODO' ).
     DATA(lt_parts) = determine_parts( ls_tadir ).
 
-    DATA(lt_vrsd) = read_versions( lt_parts ).
+    DATA(lt_vrsd) = read_versions(
+      it_parts   = lt_parts
+      iv_korrnum = iv_korrnum ).
 
     rt_files = build(
       is_tadir = ls_tadir
@@ -286,6 +292,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       FOR ALL ENTRIES IN @it_parts
       WHERE objtype = @it_parts-objtype
       AND objname = @it_parts-objname
+      AND korrnum = @iv_korrnum
       ORDER BY PRIMARY KEY.
 
     read_sources( CHANGING ct_vrsd = rt_vrsd ).
