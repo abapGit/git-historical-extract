@@ -23,6 +23,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_GBR</KEY>
+     <ENTRY>Branch</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_GURL</KEY>
      <ENTRY>URL</ENTRY>
      <LENGTH>11</LENGTH>

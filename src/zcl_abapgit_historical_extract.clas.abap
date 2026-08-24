@@ -12,6 +12,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         it_transports TYPE ty_trkorr_range
         it_object     TYPE ty_object_range
         iv_url        TYPE string
+        iv_branch     TYPE string
         iv_skip_git   TYPE abap_bool
       RAISING
         zcx_abapgit_exception .
@@ -59,8 +60,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
       IF iv_skip_git = abap_false.
         zcl_abapgit_historical_git=>push(
-          it_files = lt_files
-          iv_url   = iv_url ).
+          iv_trkorr = ls_trkorr-trkorr
+          it_files  = lt_files
+          iv_url    = iv_url
+          iv_branch = iv_branch ).
       ENDIF.
     ENDLOOP.
 
