@@ -51,7 +51,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
     DATA(lv_objtype) = iv_objtype.
 * translate
     IF lv_objtype = 'DOMA'.
-      BREAK-POINT.
       lv_objtype = 'DOMD'.
     ENDIF.
 
@@ -60,15 +59,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       AND objname = @iv_objname
       AND korrnum = @iv_korrnum.
     IF sy-subrc <> 0.
-      " non handled object types, todo
-      " then its a deletion? maybe?
       RETURN.
     ENDIF.
 
     DATA(li_object) = create( VALUE #(
       obj_name = ls_vrsd-objname
-      object   = ls_vrsd-objtype
-      devclass = 'TODO' ) ).
+      object   = ls_vrsd-objtype ) ).
 
     rt_files = li_object->build_files( iv_korrnum ).
 
