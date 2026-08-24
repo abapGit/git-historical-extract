@@ -25,6 +25,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD run.
 
+    DATA lt_files TYPE zif_abapgit_historical_extract=>ty_files_tt.
+
     SELECT trkorr FROM e070
       INTO TABLE @DATA(lt_trkorr)
       WHERE trkorr IN @it_transports
@@ -41,14 +43,19 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         i_output_immediately = abap_true ).
 
       DATA(lt_list) = zcl_abapgit_factory=>get_cts_api( )->list_r3tr_by_request( ls_trkorr-trkorr ).
+
+      CLEAR lt_files.
       LOOP AT lt_list INTO DATA(ls_list).
-        zcl_abapgit_historical_objects=>read(
+        DATA(lt_obj_files) = zcl_abapgit_historical_objects=>read(
           iv_objtype = ls_list-object
           iv_objname = CONV #( ls_list-obj_name )
           iv_korrnum = ls_trkorr-trkorr ).
+        INSERT LINES OF lt_obj_files INTO TABLE lt_files.
       ENDLOOP.
 
+      IF iv_skip_git = abap_false.
       " git_push( lt_files ).
+      ENDIF.
     ENDLOOP.
 
   ENDMETHOD.

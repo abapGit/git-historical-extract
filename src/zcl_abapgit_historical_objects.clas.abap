@@ -1,21 +1,13 @@
 CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
   PUBLIC SECTION.
 
-    TYPES:
-      BEGIN OF ty_file,
-        filename TYPE string,
-        source   TYPE string,
-      END OF ty_file .
-    TYPES
-      ty_files_tt TYPE STANDARD TABLE OF ty_file WITH EMPTY KEY .
-
     CLASS-METHODS read
       IMPORTING
         iv_objtype      TYPE vrsd-objtype
         iv_objname      TYPE vrsd-objname
         iv_korrnum      TYPE vrsd-korrnum
       RETURNING
-        VALUE(rt_files) TYPE ty_files_tt.
+        VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -49,7 +41,7 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
         it_vrsd         TYPE ty_vrsd_tt
       RETURNING
-        VALUE(rt_files) TYPE ty_files_tt .
+        VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt .
     CLASS-METHODS determine_parts
       IMPORTING
         is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
