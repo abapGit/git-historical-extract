@@ -132,6 +132,13 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
           type     = is_tadir-object
           name     = is_tadir-obj_name
           devclass = is_tadir-devclass ) TO rt_parts.
+      WHEN 'DOMD'.
+        APPEND VALUE #(
+          objtype  = 'DOMD'
+          objname  = is_tadir-obj_name
+          type     = is_tadir-object
+          name     = is_tadir-obj_name
+          devclass = is_tadir-devclass ) TO rt_parts.
       WHEN 'CLAS'.
 * note that the CLSD is not needed
 * 4 x CINC, dont serialize if empty, CCAU + CCDEF + CCIMP + CCMAC
@@ -202,8 +209,15 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
 
     DATA ls_vrsd TYPE vrsd.
 
+    DATA(lv_objtype) = iv_objtype.
+* translate
+    IF lv_objtype = 'DOMA'.
+      BREAK-POINT.
+      lv_objtype = 'DOMD'.
+    ENDIF.
+
     SELECT SINGLE * FROM vrsd INTO @ls_vrsd
-      WHERE objtype = @iv_objtype
+      WHERE objtype = @lv_objtype
       AND objname = @iv_objname
       AND korrnum = @iv_korrnum.
     IF sy-subrc <> 0.
