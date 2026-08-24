@@ -20,7 +20,10 @@
     }
   ],
   "syntax": {
-    "version": "v740sp08",
+    "version": {
+      "release": "v740sp08",
+      "language": "Normal"
+    },
     "errorNamespace": "^(Z|Y|LCL_|TY_|LIF_)"
   },
   "rules": {

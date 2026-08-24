@@ -46,23 +46,23 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
 
     CLASS-METHODS build
       IMPORTING
-        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
-        !it_vrsd        TYPE ty_vrsd_tt
+        is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
+        it_vrsd         TYPE ty_vrsd_tt
       RETURNING
         VALUE(rt_files) TYPE ty_files_tt .
     CLASS-METHODS determine_parts
       IMPORTING
-        !is_tadir       TYPE zif_abapgit_definitions=>ty_tadir
+        is_tadir        TYPE zif_abapgit_definitions=>ty_tadir
       RETURNING
         VALUE(rt_parts) TYPE ty_parts_tt .
     CLASS-METHODS read_versions
       IMPORTING
-        !it_parts      TYPE ty_parts_tt
+        it_parts       TYPE ty_parts_tt
       RETURNING
         VALUE(rt_vrsd) TYPE ty_vrsd_tt .
     CLASS-METHODS read_sources
       CHANGING
-        !ct_vrsd TYPE ty_vrsd_tt .
+        ct_vrsd TYPE ty_vrsd_tt .
 ENDCLASS.
 
 
