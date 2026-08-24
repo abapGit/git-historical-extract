@@ -98,8 +98,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_files.
 
-    DATA ls_file     LIKE LINE OF rt_files.
-    DATA ls_extended TYPE zif_abapgit_historical_object=>ty_vrsd.
+    DATA ls_file LIKE LINE OF rt_files.
 
 
     DATA(lt_vrsd) = zcl_abapgit_historical_source=>read_versions(
@@ -112,7 +111,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
 
     ls_file-filename = |{ to_lower( ms_tadir-obj_name ) }.clas.abap|.
 
-    READ TABLE lt_vrsd INTO ls_extended WITH KEY objtype = 'CPUB'.
+    READ TABLE lt_vrsd INTO DATA(ls_extended) WITH KEY objtype = 'CPUB'.
     IF sy-subrc = 0.
       ls_file-source = |{ ls_extended-source }\n|.
     ENDIF.

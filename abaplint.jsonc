@@ -9,6 +9,10 @@
   },
   "dependencies": [
     {
+      "folder": "/stubs",
+      "files": "/**/*.*"
+    },
+    {
       "url": "https://github.com/abaplint/deps",
       "folder": "/deps1",
       "files": "/src/**/*.*"
@@ -187,7 +191,7 @@
     "parser_702_chaining": true,
     "parser_error": true,
     "parser_missing_space": true,
-    "prefer_inline": true,
+    "prefer_inline": false,
     "prefer_is_not": true,
     "prefer_raise_exception_new": true,
     "prefer_returning_to_exporting": true,

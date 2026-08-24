@@ -46,8 +46,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_files.
 
-    DATA ls_file     LIKE LINE OF rt_files.
-    DATA ls_extended TYPE zif_abapgit_historical_object=>ty_vrsd.
+    DATA ls_file LIKE LINE OF rt_files.
 
 
     DATA(lt_vrsd) = zcl_abapgit_historical_source=>read_versions(
@@ -56,7 +55,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
 
     ls_file-filename = |{ to_lower( ms_tadir-obj_name ) }.intf.abap|.
 
-    READ TABLE lt_vrsd INTO ls_extended WITH KEY objtype = 'INTF'.
+    READ TABLE lt_vrsd INTO DATA(ls_extended) WITH KEY objtype = 'INTF'.
     IF sy-subrc = 0.
       ls_file-source = zcl_abapgit_historical_source=>read_reps( ls_extended ).
     ENDIF.

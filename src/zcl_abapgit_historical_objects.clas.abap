@@ -7,7 +7,9 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
         iv_objname      TYPE vrsd-objname
         iv_korrnum      TYPE vrsd-korrnum
       RETURNING
-        VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt.
+        VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt
+      RAISING
+        zcx_abapgit_exception.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
