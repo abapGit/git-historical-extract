@@ -5,7 +5,7 @@ TABLES: e070, sscrfields, tadir.
 SELECT-OPTIONS s_trkorr FOR e070-trkorr OBLIGATORY.
 SELECT-OPTIONS s_object FOR tadir-object.
 
-PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git'.
+PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git' LOWER CASE.
 PARAMETERS p_skip TYPE abap_bool AS CHECKBOX DEFAULT abap_true.
 
 INCLUDE zabapgit_password_dialog.
