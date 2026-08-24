@@ -273,6 +273,23 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
             <ls_vrsd>-source = concat_lines_of( table = lt_repos
                                                 sep   = |\n| ).
           ENDIF.
+        WHEN 'DOMD'.
+          DATA dd07v_tab TYPE STANDARD TABLE OF dd07v WITH DEFAULT KEY.
+          DATA dd01v_tab TYPE STANDARD TABLE OF dd01v WITH DEFAULT KEY.
+          DATA dd07tv_tab TYPE STANDARD TABLE OF dd07tv WITH DEFAULT KEY.
+          DATA dd01tv_tab TYPE STANDARD TABLE OF dd01tv WITH DEFAULT KEY.
+          break-point.
+          CALL FUNCTION 'SVRS_GET_VERSION_DOMD_40'
+            EXPORTING
+              object_name = <ls_vrsd>-objname
+              versno      = <ls_vrsd>-versno
+            TABLES
+              dd01v_tab   = dd01v_tab
+              dd07v_tab   = dd07v_tab
+              dd01tv_tab  = dd01tv_tab
+              dd07tv_tab  = dd07tv_tab
+            EXCEPTIONS
+              no_version  = 01.
         WHEN OTHERS.
           ASSERT 1 = 'todo'.
       ENDCASE.
