@@ -3,6 +3,7 @@ REPORT zabapgit_historical_extract.
 TABLES: e070, sscrfields.
 
 SELECT-OPTIONS s_trkorr FOR e070-trkorr OBLIGATORY.
+SELECT-OPTIONS s_object FOR tadir-object.
 
 PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git'.
 PARAMETERS p_skip TYPE abap_bool AS CHECKBOX DEFAULT abap_true.
@@ -30,6 +31,7 @@ FORM extract.
   TRY.
       NEW zcl_abapgit_historical_extract( )->run(
         it_transports = s_trkorr[]
+        it_object     = s_object[]
         iv_url        = p_gurl
         iv_skip_git   = p_skip ).
     CATCH zcx_abapgit_exception INTO DATA(lx_error).

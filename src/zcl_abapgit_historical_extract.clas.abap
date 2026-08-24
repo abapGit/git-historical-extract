@@ -5,10 +5,12 @@ CLASS zcl_abapgit_historical_extract DEFINITION
   PUBLIC SECTION.
 
     TYPES ty_trkorr_range TYPE RANGE OF e070-trkorr .
+    TYPES ty_object_range TYPE RANGE OF tadir-object .
 
     METHODS run
       IMPORTING
         it_transports TYPE ty_trkorr_range
+        it_object     TYPE ty_object_range
         iv_url        TYPE string
         iv_skip_git   TYPE abap_bool
       RAISING
@@ -44,7 +46,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       DATA(lt_list) = zcl_abapgit_factory=>get_cts_api( )->list_r3tr_by_request( ls_trkorr-trkorr ).
 
       CLEAR lt_files.
-      LOOP AT lt_list INTO DATA(ls_list).
+      LOOP AT lt_list INTO DATA(ls_list) WHERE object IN it_object.
         DATA(lt_obj_files) = zcl_abapgit_historical_objects=>read(
           iv_objtype = ls_list-object
           iv_objname = CONV #( ls_list-obj_name )
@@ -53,7 +55,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       ENDLOOP.
 
       IF iv_skip_git = abap_false.
-      " git_push( lt_files ).
+        zcl_abapgit_historical_git=>push(
+          it_files = lt_files
+          iv_url   = iv_url ).
       ENDIF.
     ENDLOOP.
 
