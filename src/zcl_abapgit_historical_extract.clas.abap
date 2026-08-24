@@ -22,7 +22,6 @@ ENDCLASS.
 
 CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
-
   METHOD run.
 
     DATA lt_files TYPE zif_abapgit_historical_extract=>ty_files_tt.

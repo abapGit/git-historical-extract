@@ -64,9 +64,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
 
   METHOD build.
 
-    DATA ls_file LIKE LINE OF rt_files.
+    DATA ls_file     LIKE LINE OF rt_files.
     DATA ls_extended LIKE LINE OF it_vrsd.
-
 
 
     CASE is_tadir-object.
