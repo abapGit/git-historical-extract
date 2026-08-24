@@ -1,6 +1,6 @@
 REPORT zabapgit_historical_extract.
 
-TABLES: e070, sscrfields.
+TABLES: e070, sscrfields, tadir.
 
 SELECT-OPTIONS s_trkorr FOR e070-trkorr OBLIGATORY.
 SELECT-OPTIONS s_object FOR tadir-object.
