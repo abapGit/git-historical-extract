@@ -251,7 +251,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
 
     DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
     DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
-
+    DATA dd07v_tab TYPE STANDARD TABLE OF dd07v WITH DEFAULT KEY.
+    DATA dd01v_tab TYPE STANDARD TABLE OF dd01v WITH DEFAULT KEY.
+    DATA dd07tv_tab TYPE STANDARD TABLE OF dd07tv WITH DEFAULT KEY.
+    DATA dd01tv_tab TYPE STANDARD TABLE OF dd01tv WITH DEFAULT KEY.
 
     LOOP AT ct_vrsd ASSIGNING FIELD-SYMBOL(<ls_vrsd>).
       CASE <ls_vrsd>-objtype.
@@ -274,11 +277,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
                                                 sep   = |\n| ).
           ENDIF.
         WHEN 'DOMD'.
-          DATA dd07v_tab TYPE STANDARD TABLE OF dd07v WITH DEFAULT KEY.
-          DATA dd01v_tab TYPE STANDARD TABLE OF dd01v WITH DEFAULT KEY.
-          DATA dd07tv_tab TYPE STANDARD TABLE OF dd07tv WITH DEFAULT KEY.
-          DATA dd01tv_tab TYPE STANDARD TABLE OF dd01tv WITH DEFAULT KEY.
-          break-point.
           CALL FUNCTION 'SVRS_GET_VERSION_DOMD_40'
             EXPORTING
               object_name = <ls_vrsd>-objname
