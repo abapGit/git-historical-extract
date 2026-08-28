@@ -13,7 +13,7 @@
       "files": "/**/*.*"
     },
     {
-      "url": "https://github.com/abaplint/deps",
+      "url": "https://github.com/open-abap/open-abap-core",
       "folder": "/deps1",
       "files": "/src/**/*.*"
     },
@@ -21,6 +21,11 @@
       "url": "https://github.com/abapGit/abapGit",
       "folder": "/deps2",
       "files": "/src/**/*.*"
+    },
+    {
+      "url": "https://github.com/abapGit/abapGit",
+      "folder": "/deps3",
+      "files": "/deps/**/*.*"
     }
   ],
   "syntax": {
