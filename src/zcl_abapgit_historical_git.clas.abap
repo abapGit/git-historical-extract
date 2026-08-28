@@ -70,7 +70,8 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
         rs_comment-comment = |{ rs_comment-comment }\nReleased by: { ls_transport-as4user }|.
       ENDIF.
       IF ls_transport-as4date IS NOT INITIAL.
-        rs_comment-comment = |{ rs_comment-comment }\nReleased on: { ls_transport-as4date } { ls_transport-as4time }|.
+        DATA(lv_released_on) = |{ ls_transport-as4date DATE = ISO } { ls_transport-as4time TIME = ISO }|.
+        rs_comment-comment = |{ rs_comment-comment }\nReleased on: { lv_released_on }|.
       ENDIF.
     ENDIF.
 
