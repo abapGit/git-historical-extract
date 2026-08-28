@@ -18,7 +18,9 @@ CLASS zcl_abapgit_historical_git DEFINITION PUBLIC.
       IMPORTING
         iv_trkorr         TYPE e070-trkorr
       RETURNING
-        VALUE(rs_comment) TYPE zif_abapgit_git_definitions=>ty_comment .
+        VALUE(rs_comment) TYPE zif_abapgit_git_definitions=>ty_comment
+      RAISING
+        zcx_abapgit_exception .
 
     CLASS-METHODS build_stage
       IMPORTING
@@ -43,9 +45,6 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
 * the owner of the transport is the author, the user running the extract is
 * the committer
-* todo, abapGit always stamps the commit with the current time, the release
-* date of the transport (e070-as4date and as4time) should be used instead,
-* this needs an optional "time" in zif_abapgit_git_definitions=>ty_comment
     DATA(lv_owner) = li_cts->read_user( iv_trkorr ).
     IF lv_owner IS INITIAL.
       lv_owner = sy-uname.
@@ -58,6 +57,15 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
     rs_comment-committer-name = sy-uname.
     rs_comment-committer-email = |{ sy-uname }@localhost|.
+
+    DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
+    READ TABLE lt_request_and_tasks INTO DATA(ls_transport)
+      WITH KEY trkorr = iv_trkorr.
+    IF sy-subrc = 0 AND ls_transport-as4date IS NOT INITIAL.
+      rs_comment-time = zcl_abapgit_git_time=>get_unix_from_local(
+        iv_date = ls_transport-as4date
+        iv_time = ls_transport-as4time ).
+    ENDIF.
 
   ENDMETHOD.
 
