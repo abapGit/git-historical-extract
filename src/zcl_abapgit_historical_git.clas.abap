@@ -32,13 +32,37 @@ CLASS zcl_abapgit_historical_git DEFINITION PUBLIC.
         zcx_abapgit_exception .
 ENDCLASS.
 
-CLASS zcl_abapgit_historical_git IMPLEMENTATION.
+
+
+CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
+
+
   METHOD build_comment.
 
+    TYPES:
+      BEGIN OF ty_task_object,
+        trkorr   TYPE e071-trkorr,
+        as4pos   TYPE e071-as4pos,
+        pgmid    TYPE e071-pgmid,
+        object   TYPE e071-object,
+        obj_name TYPE e071-obj_name,
+      END OF ty_task_object.
+    TYPES ty_task_objects_tt TYPE STANDARD TABLE OF ty_task_object WITH EMPTY KEY.
+
     DATA lt_task_lines TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+    DATA lt_task_objects TYPE ty_task_objects_tt.
 
     DATA(li_cts) = zcl_abapgit_factory=>get_cts_api( ).
     DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
+
+    IF lines( lt_request_and_tasks ) > 0.
+      SELECT trkorr, as4pos, pgmid, object, obj_name
+        FROM e071
+        INTO TABLE @lt_task_objects
+        FOR ALL ENTRIES IN @lt_request_and_tasks
+        WHERE trkorr = @lt_request_and_tasks-trkorr
+        ORDER BY PRIMARY KEY.
+    ENDIF.
 
     DATA(lv_description) = li_cts->read_description( iv_trkorr ).
     lv_description = |{ iv_trkorr } - { lv_description }|.
@@ -51,7 +75,8 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
         rs_comment-comment = |{ rs_comment-comment }\nReleased by: { ls_transport-as4user }|.
       ENDIF.
       IF ls_transport-as4date IS NOT INITIAL.
-        rs_comment-comment = |{ rs_comment-comment }\nReleased on: { ls_transport-as4date } { ls_transport-as4time }|.
+        DATA(lv_released_on) = |{ ls_transport-as4date DATE = ISO } { ls_transport-as4time TIME = ISO }|.
+        rs_comment-comment = |{ rs_comment-comment }\nReleased on: { lv_released_on }|.
       ENDIF.
     ENDIF.
 
@@ -67,6 +92,13 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
         lv_task_line = |{ lv_task_line } ({ lv_task_user })|.
       ENDIF.
       APPEND lv_task_line TO lt_task_lines.
+
+      LOOP AT lt_task_objects INTO DATA(ls_task_object)
+          WHERE trkorr = ls_task-trkorr.
+        DATA(lv_task_object_name) = CONV string( ls_task_object-obj_name ).
+        CONDENSE lv_task_object_name.
+        APPEND |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }| TO lt_task_lines.
+      ENDLOOP.
     ENDLOOP.
 
     IF lines( lt_task_lines ) > 0.
@@ -84,11 +116,8 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
 * use the raw user name from the transport, the user record is typically
 * long gone for old transports
-    rs_comment-author-name = lv_owner.
-    rs_comment-author-email = |{ lv_owner }@localhost|.
-
-    rs_comment-committer-name = rs_comment-author-name.
-    rs_comment-committer-email = rs_comment-author-email.
+    rs_comment-committer-name = lv_owner.
+    rs_comment-committer-email = |{ lv_owner }@localhost|.
 
     IF ls_transport-as4date IS NOT INITIAL.
       rs_comment-time = zcl_abapgit_git_time=>get_unix_from_local(
@@ -98,27 +127,31 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD build_stage.
 
     ro_stage = NEW zcl_abapgit_stage( ).
 
     LOOP AT it_files INTO DATA(ls_file).
       IF ls_file-deleted = abap_true.
-        IF line_exists( it_old_files[ path = c_path filename = ls_file-filename ] ).
+        READ TABLE it_old_files INTO DATA(ls_old_file)
+          WITH KEY filename = ls_file-filename.
+        IF sy-subrc = 0.
           ro_stage->rm(
-            iv_path     = c_path
-            iv_filename = ls_file-filename ).
+            iv_path     = ls_old_file-path
+            iv_filename = ls_old_file-filename ).
         ENDIF.
         CONTINUE.
       ENDIF.
 
       ro_stage->add(
-        iv_path     = c_path
+        iv_path     = |{ c_path }{ ls_file-path }|
         iv_filename = ls_file-filename
         iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ) ).
     ENDLOOP.
 
   ENDMETHOD.
+
 
   METHOD push.
     ASSERT iv_url IS NOT INITIAL.
@@ -154,5 +187,4 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
       iv_branch_name = lv_branch ).
 
   ENDMETHOD.
-
 ENDCLASS.
