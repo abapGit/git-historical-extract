@@ -104,16 +104,18 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
     LOOP AT it_files INTO DATA(ls_file).
       IF ls_file-deleted = abap_true.
-        IF line_exists( it_old_files[ path = c_path filename = ls_file-filename ] ).
+        READ TABLE it_old_files INTO DATA(ls_old_file)
+          WITH KEY filename = ls_file-filename.
+        IF sy-subrc = 0.
           ro_stage->rm(
-            iv_path     = c_path
-            iv_filename = ls_file-filename ).
+            iv_path     = ls_old_file-path
+            iv_filename = ls_old_file-filename ).
         ENDIF.
         CONTINUE.
       ENDIF.
 
       ro_stage->add(
-        iv_path     = c_path
+        iv_path     = |{ c_path }{ ls_file-path }|
         iv_filename = ls_file-filename
         iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ) ).
     ENDLOOP.

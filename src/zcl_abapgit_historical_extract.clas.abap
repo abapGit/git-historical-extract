@@ -19,6 +19,13 @@ CLASS zcl_abapgit_historical_extract DEFINITION
   PROTECTED SECTION.
 
   PRIVATE SECTION.
+
+    CLASS-METHODS get_folder
+      IMPORTING
+        iv_object        TYPE tadir-object
+        iv_obj_name      TYPE tadir-obj_name
+      RETURNING
+        VALUE(rv_folder) TYPE string.
 ENDCLASS.
 
 
@@ -39,6 +46,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         object   TYPE e071-object,
         obj_name TYPE e071-obj_name,
       END OF ty_deleted_object.
+
+    DATA lv_folder TYPE string.
 
     DATA lt_files           TYPE zif_abapgit_historical_extract=>ty_files_tt.
     DATA lt_trkorr          TYPE STANDARD TABLE OF ty_transport WITH EMPTY KEY.
@@ -83,19 +92,31 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           CONTINUE.
         ENDIF.
 
+        lv_folder = get_folder(
+          iv_object   = ls_list-object
+          iv_obj_name = CONV #( ls_list-obj_name ) ).
+
         DATA(lt_obj_files) = zcl_abapgit_historical_objects=>read(
           iv_objtype = ls_list-object
           iv_objname = CONV #( ls_list-obj_name )
           iv_korrnum = ls_trkorr-trkorr ).
+        LOOP AT lt_obj_files ASSIGNING FIELD-SYMBOL(<ls_obj_file>).
+          <ls_obj_file>-path = |{ lv_folder }/|.
+        ENDLOOP.
         INSERT LINES OF lt_obj_files INTO TABLE lt_files.
       ENDLOOP.
 
       LOOP AT lt_deleted_objects INTO DATA(ls_deleted_object)
           WHERE request = ls_trkorr-trkorr.
+        lv_folder = get_folder(
+          iv_object   = ls_deleted_object-object
+          iv_obj_name = CONV #( ls_deleted_object-obj_name(110) ) ).
+
         lt_deleted_files = zcl_abapgit_historical_objects=>read_deleted(
           iv_objtype = ls_deleted_object-object
           iv_objname = ls_deleted_object-obj_name(110) ).
         LOOP AT lt_deleted_files INTO DATA(ls_deleted_file).
+          ls_deleted_file-path = |{ lv_folder }/|.
           IF NOT line_exists( lt_files[ filename = ls_deleted_file-filename ] ).
             APPEND ls_deleted_file TO lt_files.
           ENDIF.
@@ -110,6 +131,20 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           iv_branch = iv_branch ).
       ENDIF.
     ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD get_folder.
+
+    SELECT SINGLE devclass
+      FROM tadir
+      INTO @rv_folder
+      WHERE pgmid = 'R3TR'
+      AND object = @iv_object
+      AND obj_name = @iv_obj_name.
+    IF sy-subrc <> 0.
+      rv_folder = 'DELETED'.
+    ENDIF.
 
   ENDMETHOD.
 ENDCLASS.
