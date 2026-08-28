@@ -87,9 +87,6 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
     rs_comment-author-name = lv_owner.
     rs_comment-author-email = |{ lv_owner }@localhost|.
 
-    rs_comment-committer-name = rs_comment-author-name.
-    rs_comment-committer-email = rs_comment-author-email.
-
     IF ls_transport-as4date IS NOT INITIAL.
       rs_comment-time = zcl_abapgit_git_time=>get_unix_from_local(
         iv_date = ls_transport-as4date
