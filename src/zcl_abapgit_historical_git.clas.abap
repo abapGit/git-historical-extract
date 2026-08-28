@@ -111,11 +111,11 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
 * use the raw user name from the transport, the user record is typically
 * long gone for old transports
-    rs_comment-author-name = lv_owner.
-    rs_comment-author-email = |{ lv_owner }@localhost|.
+    " rs_comment-author-name = lv_owner.
+    " rs_comment-author-email = |{ lv_owner }@localhost|.
 
-    rs_comment-committer-name = rs_comment-author-name.
-    rs_comment-committer-email = rs_comment-author-email.
+    rs_comment-committer-name = lv_owner.
+    rs_comment-committer-email = |{ lv_owner }@localhost|.
 
     IF ls_transport-as4date IS NOT INITIAL.
       rs_comment-time = zcl_abapgit_git_time=>get_unix_from_local(
