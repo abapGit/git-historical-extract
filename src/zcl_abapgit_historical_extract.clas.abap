@@ -29,6 +29,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
   METHOD run.
 
     TYPES:
+      BEGIN OF ty_transport,
+        trkorr TYPE e070-trkorr,
+      END OF ty_transport,
       BEGIN OF ty_deleted_object,
         request  TYPE e070-strkorr,
         object   TYPE e071-object,
@@ -36,7 +39,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       END OF ty_deleted_object.
 
     DATA lt_files           TYPE zif_abapgit_historical_extract=>ty_files_tt.
-    DATA lt_trkorr          TYPE STANDARD TABLE OF e070-trkorr WITH EMPTY KEY.
+    DATA lt_trkorr          TYPE STANDARD TABLE OF ty_transport WITH EMPTY KEY.
     DATA lt_deleted_objects TYPE SORTED TABLE OF ty_deleted_object
       WITH UNIQUE KEY request object obj_name.
     DATA lt_deleted_files   TYPE zif_abapgit_historical_extract=>ty_files_tt.
