@@ -29,7 +29,33 @@ AT SELECTION-SCREEN.
   ENDIF.
 
 FORM extract.
+  DATA lt_fields TYPE STANDARD TABLE OF sval WITH EMPTY KEY.
+
   TRY.
+      IF p_skip = abap_false.
+        APPEND VALUE #(
+          tabname   = 'SPOP'
+          fieldname = 'VARFIELD'
+          fieldtext = 'Token' ) TO lt_fields.
+        CALL FUNCTION 'POPUP_GET_VALUES'
+          EXPORTING
+            popup_title     = 'Enter GitHub Token'
+          TABLES
+            fields          = lt_fields
+          EXCEPTIONS
+            error_in_fields = 1
+            OTHERS          = 2.
+        IF sy-subrc <> 0 OR lt_fields[ 1 ]-value IS INITIAL.
+          MESSAGE 'Git push cancelled' TYPE 'I'.
+          RETURN.
+        ENDIF.
+
+        zcl_abapgit_login_manager=>set_basic(
+          iv_uri      = p_gurl
+          iv_username = CONV #( sy-uname )
+          iv_password = lt_fields[ 1 ]-value ).
+      ENDIF.
+
       NEW zcl_abapgit_historical_extract( )->run(
         it_transports = s_trkorr[]
         it_object     = s_object[]
