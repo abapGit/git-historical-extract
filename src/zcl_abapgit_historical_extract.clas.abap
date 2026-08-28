@@ -52,11 +52,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       AND strkorr = ''
       ORDER BY PRIMARY KEY.
 
-    SELECT e070~strkorr, e071~object, e071~obj_name
+    SELECT e071~trkorr, e071~object, e071~obj_name
       FROM e071
-      INNER JOIN e070 ON e070~trkorr = e071~trkorr
       INTO TABLE @lt_deleted_objects
-      WHERE e070~strkorr IN @it_transports
+      WHERE e071~trkorr IN @it_transports
         AND e071~pgmid = 'R3TR'
         AND e071~object IN @it_object
         AND e071~objfunc = 'D'.
