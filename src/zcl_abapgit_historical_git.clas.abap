@@ -34,14 +34,45 @@ ENDCLASS.
 CLASS zcl_abapgit_historical_git IMPLEMENTATION.
   METHOD build_comment.
 
+    DATA lt_task_lines TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+
     DATA(li_cts) = zcl_abapgit_factory=>get_cts_api( ).
+    DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
 
     DATA(lv_description) = li_cts->read_description( iv_trkorr ).
-    IF lv_description IS INITIAL.
-* released transports without a short text still deserve a subject line
-      lv_description = |Transport { iv_trkorr }|.
-    ENDIF.
+    lv_description = |{ iv_trkorr } - { lv_description }|.
     rs_comment-comment = |{ lv_description }\n\nTransport: { iv_trkorr }|.
+
+    READ TABLE lt_request_and_tasks INTO DATA(ls_transport)
+      WITH KEY trkorr = iv_trkorr.
+    IF sy-subrc = 0.
+      IF ls_transport-as4user IS NOT INITIAL.
+        rs_comment-comment = |{ rs_comment-comment }\nReleased by: { ls_transport-as4user }|.
+      ENDIF.
+      IF ls_transport-as4date IS NOT INITIAL.
+        rs_comment-comment = |{ rs_comment-comment }\nReleased on: { ls_transport-as4date } { ls_transport-as4time }|.
+      ENDIF.
+    ENDIF.
+
+    LOOP AT lt_request_and_tasks INTO DATA(ls_task)
+        WHERE trkorr <> iv_trkorr.
+      DATA(lv_task_line) = |- { ls_task-trkorr }|.
+      DATA(lv_task_description) = li_cts->read_description( ls_task-trkorr ).
+      IF lv_task_description IS NOT INITIAL.
+        lv_task_line = |{ lv_task_line }: { lv_task_description }|.
+      ENDIF.
+      DATA(lv_task_user) = li_cts->read_user( ls_task-trkorr ).
+      IF lv_task_user IS NOT INITIAL.
+        lv_task_line = |{ lv_task_line } ({ lv_task_user })|.
+      ENDIF.
+      APPEND lv_task_line TO lt_task_lines.
+    ENDLOOP.
+
+    IF lines( lt_task_lines ) > 0.
+      rs_comment-comment = |{ rs_comment-comment }\n\nTasks:\n{ concat_lines_of(
+        table = lt_task_lines
+        sep   = |\n| ) }|.
+    ENDIF.
 
 * the owner of the transport is the author, the user running the extract is
 * the committer
@@ -58,10 +89,7 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
     rs_comment-committer-name = sy-uname.
     rs_comment-committer-email = |{ sy-uname }@localhost|.
 
-    DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
-    READ TABLE lt_request_and_tasks INTO DATA(ls_transport)
-      WITH KEY trkorr = iv_trkorr.
-    IF sy-subrc = 0 AND ls_transport-as4date IS NOT INITIAL.
+    IF ls_transport-as4date IS NOT INITIAL.
       rs_comment-time = zcl_abapgit_git_time=>get_unix_from_local(
         iv_date = ls_transport-as4date
         iv_time = ls_transport-as4time ).
