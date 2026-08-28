@@ -92,7 +92,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           WHERE request = ls_trkorr-trkorr.
         lt_deleted_files = zcl_abapgit_historical_objects=>read_deleted(
           iv_objtype = ls_deleted_object-object
-          iv_objname = ls_deleted_object-obj_name ).
+          iv_objname = ls_deleted_object-obj_name(110) ).
         LOOP AT lt_deleted_files INTO DATA(ls_deleted_file).
           IF NOT line_exists( lt_files[ filename = ls_deleted_file-filename ] ).
             APPEND ls_deleted_file TO lt_files.
