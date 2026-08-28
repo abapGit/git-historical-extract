@@ -35,10 +35,29 @@ ENDCLASS.
 CLASS zcl_abapgit_historical_git IMPLEMENTATION.
   METHOD build_comment.
 
+    TYPES:
+      BEGIN OF ty_task_object,
+        trkorr   TYPE e071-trkorr,
+        pgmid    TYPE e071-pgmid,
+        object   TYPE e071-object,
+        obj_name TYPE e071-obj_name,
+      END OF ty_task_object.
+    TYPES ty_task_objects_tt TYPE STANDARD TABLE OF ty_task_object WITH EMPTY KEY.
+
     DATA lt_task_lines TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+    DATA lt_task_objects TYPE ty_task_objects_tt.
 
     DATA(li_cts) = zcl_abapgit_factory=>get_cts_api( ).
     DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
+
+    IF lines( lt_request_and_tasks ) > 0.
+      SELECT trkorr, pgmid, object, obj_name
+        FROM e071
+        INTO TABLE @lt_task_objects
+        FOR ALL ENTRIES IN @lt_request_and_tasks
+        WHERE trkorr = @lt_request_and_tasks-trkorr
+        ORDER BY PRIMARY KEY.
+    ENDIF.
 
     DATA(lv_description) = li_cts->read_description( iv_trkorr ).
     lv_description = |{ iv_trkorr } - { lv_description }|.
@@ -67,6 +86,13 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
         lv_task_line = |{ lv_task_line } ({ lv_task_user })|.
       ENDIF.
       APPEND lv_task_line TO lt_task_lines.
+
+      LOOP AT lt_task_objects INTO DATA(ls_task_object)
+          WHERE trkorr = ls_task-trkorr.
+        DATA(lv_task_object_name) = CONV string( ls_task_object-obj_name ).
+        CONDENSE lv_task_object_name.
+        APPEND |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }| TO lt_task_lines.
+      ENDLOOP.
     ENDLOOP.
 
     IF lines( lt_task_lines ) > 0.
