@@ -244,15 +244,16 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
       EXCEPTIONS
         no_version  = 1
         OTHERS      = 2.
-    IF sy-subrc <> 0.
+    IF sy-subrc = 1.
+      RETURN.
+    ELSEIF sy-subrc <> 0.
       zcx_abapgit_exception=>raise(
-        |Unable to read historical DOMA { is_vrsd-objname } version { is_vrsd-versno }| ).
+        |Unable to read historical DOMA { is_vrsd-objname } version { is_vrsd-versno }, subrc { sy-subrc }| ).
     ENDIF.
 
     READ TABLE lt_dd01v INTO rs_domain-dd01v INDEX 1.
     IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise(
-        |Historical DOMA { is_vrsd-objname } version { is_vrsd-versno } has no header| ).
+      RETURN.
     ENDIF.
 
 * the descriptions are kept in the language dependent tables
@@ -332,6 +333,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
 * the version database knows DOMD, abapGit and the AFF know DOMA
     ls_file-filename = |{ to_lower( ms_tadir-obj_name ) }.doma.json|.
     DATA(ls_domain) = read_domd( ls_vrsd ).
+    IF ls_domain-dd01v IS INITIAL.
+      RETURN.
+    ENDIF.
     IF ls_domain-dd01v-appendname IS NOT INITIAL.
 * TODO: Skip DOMA appends
       RETURN.
