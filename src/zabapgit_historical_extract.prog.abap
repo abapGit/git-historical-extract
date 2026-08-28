@@ -53,7 +53,7 @@ FORM extract.
         zcl_abapgit_login_manager=>set_basic(
           iv_uri      = p_gurl
           iv_username = CONV #( sy-uname )
-          iv_password = lt_fields[ 1 ]-value ).
+          iv_password = CONV #( lt_fields[ 1 ]-value ) ).
       ENDIF.
 
       NEW zcl_abapgit_historical_extract( )->run(
