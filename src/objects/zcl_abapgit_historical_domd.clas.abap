@@ -166,18 +166,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     IF is_domain-dd01v-ddlanguage IS INITIAL.
       zcx_abapgit_exception=>raise( |Original language is missing in domain { ms_tadir-obj_name }| ).
     ENDIF.
-    zcl_abapgit_convert=>language_sap1_to_bcp47(
-      EXPORTING
-        im_lang_sap1  = is_domain-dd01v-ddlanguage
-      RECEIVING
-        re_lang_bcp47 = rs_aff-header-original_language
-      EXCEPTIONS
-        no_assignment = 1
-        OTHERS        = 2 ).
-    IF sy-subrc <> 0 OR rs_aff-header-original_language IS INITIAL.
-      zcx_abapgit_exception=>raise(
-        |Unable to convert language { is_domain-dd01v-ddlanguage } in domain { ms_tadir-obj_name }| ).
-    ENDIF.
+    rs_aff-header-original_language = is_domain-dd01v-ddlanguage.
     rs_aff-header-abap_language_version = zif_abapgit_aff_types_v1=>co_abap_language_version-standard.
 
     rs_aff-format-data_type = map_data_type_to_aff(
