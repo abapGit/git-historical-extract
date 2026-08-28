@@ -30,7 +30,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
     TYPES:
       BEGIN OF ty_transport,
-        trkorr TYPE e070-trkorr,
+        trkorr  TYPE e070-trkorr,
+        as4date TYPE e070-as4date,
+        as4time TYPE e070-as4time,
       END OF ty_transport,
       BEGIN OF ty_deleted_object,
         request  TYPE e070-strkorr,
@@ -44,13 +46,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       WITH UNIQUE KEY request object obj_name.
     DATA lt_deleted_files   TYPE zif_abapgit_historical_extract=>ty_files_tt.
 
-    SELECT trkorr FROM e070
+* process transports chronologically so deletions follow earlier object changes
+    SELECT trkorr, as4date, as4time FROM e070
       INTO TABLE @lt_trkorr
       WHERE trkorr IN @it_transports
       AND trstatus = @zif_abapgit_cts_api=>c_transport_status-released
       AND trfunction = @zif_abapgit_cts_api=>c_transport_type-wb_request
       AND strkorr = ''
-      ORDER BY PRIMARY KEY.
+      ORDER BY as4date, as4time, trkorr.
 
     SELECT e071~trkorr, e071~object, e071~obj_name
       FROM e071
