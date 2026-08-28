@@ -111,9 +111,6 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
 * use the raw user name from the transport, the user record is typically
 * long gone for old transports
-    " rs_comment-author-name = lv_owner.
-    " rs_comment-author-email = |{ lv_owner }@localhost|.
-
     rs_comment-committer-name = lv_owner.
     rs_comment-committer-email = |{ lv_owner }@localhost|.
 
