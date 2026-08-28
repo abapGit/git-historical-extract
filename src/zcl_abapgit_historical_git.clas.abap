@@ -32,12 +32,17 @@ CLASS zcl_abapgit_historical_git DEFINITION PUBLIC.
         zcx_abapgit_exception .
 ENDCLASS.
 
-CLASS zcl_abapgit_historical_git IMPLEMENTATION.
+
+
+CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
+
+
   METHOD build_comment.
 
     TYPES:
       BEGIN OF ty_task_object,
         trkorr   TYPE e071-trkorr,
+        as4pos   TYPE e071-as4pos,
         pgmid    TYPE e071-pgmid,
         object   TYPE e071-object,
         obj_name TYPE e071-obj_name,
@@ -51,7 +56,7 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
     DATA(lt_request_and_tasks) = li_cts->read_request_and_tasks( iv_trkorr ).
 
     IF lines( lt_request_and_tasks ) > 0.
-      SELECT trkorr, pgmid, object, obj_name
+      SELECT trkorr, as4pos, pgmid, object, obj_name
         FROM e071
         INTO TABLE @lt_task_objects
         FOR ALL ENTRIES IN @lt_request_and_tasks
@@ -122,6 +127,7 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD build_stage.
 
     ro_stage = NEW zcl_abapgit_stage( ).
@@ -145,6 +151,7 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
+
 
   METHOD push.
     ASSERT iv_url IS NOT INITIAL.
@@ -180,5 +187,4 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
       iv_branch_name = lv_branch ).
 
   ENDMETHOD.
-
 ENDCLASS.
