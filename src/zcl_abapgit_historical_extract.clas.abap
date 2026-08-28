@@ -56,9 +56,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       FROM e071
       INTO TABLE @lt_deleted_objects
       WHERE e071~trkorr IN @it_transports
-        AND e071~pgmid = 'R3TR'
-        AND e071~object IN @it_object
-        AND e071~objfunc = 'D'.
+      AND e071~pgmid = 'R3TR'
+      AND e071~object IN @it_object
+      AND e071~objfunc = 'D'.
 
     LOOP AT lt_trkorr INTO DATA(ls_trkorr).
       IF sy-tabix MOD 10 = 0.
