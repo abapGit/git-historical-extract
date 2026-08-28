@@ -196,9 +196,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
       rs_aff-output_characteristics-am_pm_time_format = abap_true.
     ENDIF.
 
-    IF is_domain-dd01v-appendname IS NOT INITIAL.
-      APPEND VALUE #( name = is_domain-dd01v-appendname ) TO rs_aff-fixed_value_appends.
-    ENDIF.
     LOOP AT is_domain-dd07v INTO DATA(ls_dd07v).
       IF ls_dd07v-appval IS NOT INITIAL.
         IF ls_dd07v-domname IS NOT INITIAL
@@ -334,7 +331,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
 
 * the version database knows DOMD, abapGit and the AFF know DOMA
     ls_file-filename = |{ to_lower( ms_tadir-obj_name ) }.doma.json|.
-    ls_file-source = serialize_aff( read_domd( ls_vrsd ) ).
+    DATA(ls_domain) = read_domd( ls_vrsd ).
+    IF ls_domain-dd01v-appendname IS NOT INITIAL.
+* TODO: Skip DOMA appends
+      RETURN.
+    ENDIF.
+    ls_file-source = serialize_aff( ls_domain ).
 
     INSERT ls_file INTO TABLE rt_files.
 
