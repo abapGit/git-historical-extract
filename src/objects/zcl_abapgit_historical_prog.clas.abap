@@ -63,4 +63,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_PROG IMPLEMENTATION.
     INSERT ls_file INTO TABLE rt_files.
 
   ENDMETHOD.
+
+  METHOD zif_abapgit_historical_object~build_deleted_files.
+
+    APPEND VALUE #(
+      filename = |{ to_lower( ms_tadir-obj_name ) }.prog.abap|
+      deleted  = abap_true ) TO rt_files.
+
+  ENDMETHOD.
 ENDCLASS.

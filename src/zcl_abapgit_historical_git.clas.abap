@@ -25,6 +25,7 @@ CLASS zcl_abapgit_historical_git DEFINITION PUBLIC.
     CLASS-METHODS build_stage
       IMPORTING
         it_files        TYPE zif_abapgit_historical_extract=>ty_files_tt
+        it_old_files    TYPE zif_abapgit_git_definitions=>ty_files_tt
       RETURNING
         VALUE(ro_stage) TYPE REF TO zcl_abapgit_stage
       RAISING
@@ -102,6 +103,15 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
     ro_stage = NEW zcl_abapgit_stage( ).
 
     LOOP AT it_files INTO DATA(ls_file).
+      IF ls_file-deleted = abap_true.
+        IF line_exists( it_old_files[ path = c_path filename = ls_file-filename ] ).
+          ro_stage->rm(
+            iv_path     = c_path
+            iv_filename = ls_file-filename ).
+        ENDIF.
+        CONTINUE.
+      ENDIF.
+
       ro_stage->add(
         iv_path     = c_path
         iv_filename = ls_file-filename
@@ -128,9 +138,16 @@ CLASS zcl_abapgit_historical_git IMPLEMENTATION.
       iv_url         = iv_url
       iv_branch_name = lv_branch ).
 
+    DATA(lo_stage) = build_stage(
+      it_files     = it_files
+      it_old_files = ls_pull-files ).
+    IF lo_stage->count( ) = 0.
+      RETURN.
+    ENDIF.
+
     zcl_abapgit_git_porcelain=>push(
       is_comment     = build_comment( iv_trkorr )
-      io_stage       = build_stage( it_files )
+      io_stage       = lo_stage
       it_old_objects = ls_pull-objects
       iv_parent      = ls_pull-commit
       iv_url         = iv_url

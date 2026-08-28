@@ -11,6 +11,15 @@ CLASS zcl_abapgit_historical_objects DEFINITION PUBLIC.
       RAISING
         zcx_abapgit_exception.
 
+    CLASS-METHODS read_deleted
+      IMPORTING
+        iv_objtype      TYPE vrsd-objtype
+        iv_objname      TYPE vrsd-objname
+      RETURNING
+        VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt
+      RAISING
+        zcx_abapgit_exception.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -69,6 +78,21 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       object   = ls_vrsd-objtype ) ).
 
     rt_files = li_object->build_files( iv_korrnum ).
+
+  ENDMETHOD.
+
+  METHOD read_deleted.
+
+    DATA(lv_objtype) = iv_objtype.
+    IF lv_objtype = 'DOMA'.
+      lv_objtype = 'DOMD'.
+    ENDIF.
+
+    DATA(li_object) = create( VALUE #(
+      obj_name = iv_objname
+      object   = lv_objtype ) ).
+
+    rt_files = li_object->build_deleted_files( ).
 
   ENDMETHOD.
 ENDCLASS.

@@ -32,4 +32,10 @@ INTERFACE zif_abapgit_historical_object PUBLIC.
     RAISING
       zcx_abapgit_exception .
 
+  METHODS build_deleted_files
+    RETURNING
+      VALUE(rt_files) TYPE zif_abapgit_historical_extract=>ty_files_tt
+    RAISING
+      zcx_abapgit_exception .
+
 ENDINTERFACE.

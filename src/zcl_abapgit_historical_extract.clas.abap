@@ -28,15 +28,35 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
   METHOD run.
 
-    DATA lt_files TYPE zif_abapgit_historical_extract=>ty_files_tt.
+    TYPES:
+      BEGIN OF ty_deleted_object,
+        request  TYPE e070-strkorr,
+        object   TYPE e071-object,
+        obj_name TYPE e071-obj_name,
+      END OF ty_deleted_object.
+
+    DATA lt_files           TYPE zif_abapgit_historical_extract=>ty_files_tt.
+    DATA lt_trkorr          TYPE STANDARD TABLE OF e070-trkorr WITH EMPTY KEY.
+    DATA lt_deleted_objects TYPE SORTED TABLE OF ty_deleted_object
+      WITH UNIQUE KEY request object obj_name.
+    DATA lt_deleted_files   TYPE zif_abapgit_historical_extract=>ty_files_tt.
 
     SELECT trkorr FROM e070
-      INTO TABLE @DATA(lt_trkorr)
+      INTO TABLE @lt_trkorr
       WHERE trkorr IN @it_transports
       AND trstatus = @zif_abapgit_cts_api=>c_transport_status-released
       AND trfunction = @zif_abapgit_cts_api=>c_transport_type-wb_request
       AND strkorr = ''
       ORDER BY PRIMARY KEY.
+
+    SELECT e070~strkorr, e071~object, e071~obj_name
+      FROM e071
+      INNER JOIN e070 ON e070~trkorr = e071~trkorr
+      INTO TABLE @lt_deleted_objects
+      WHERE e070~strkorr IN @it_transports
+        AND e071~pgmid = 'R3TR'
+        AND e071~object IN @it_object
+        AND e071~objfunc = 'D'.
 
     LOOP AT lt_trkorr INTO DATA(ls_trkorr).
       IF sy-tabix MOD 10 = 0.
@@ -51,11 +71,30 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
       CLEAR lt_files.
       LOOP AT lt_list INTO DATA(ls_list) WHERE object IN it_object.
+        IF line_exists( lt_deleted_objects[
+              request  = ls_trkorr-trkorr
+              object   = ls_list-object
+              obj_name = ls_list-obj_name ] ).
+          CONTINUE.
+        ENDIF.
+
         DATA(lt_obj_files) = zcl_abapgit_historical_objects=>read(
           iv_objtype = ls_list-object
           iv_objname = CONV #( ls_list-obj_name )
           iv_korrnum = ls_trkorr-trkorr ).
         INSERT LINES OF lt_obj_files INTO TABLE lt_files.
+      ENDLOOP.
+
+      LOOP AT lt_deleted_objects INTO DATA(ls_deleted_object)
+          WHERE request = ls_trkorr-trkorr.
+        lt_deleted_files = zcl_abapgit_historical_objects=>read_deleted(
+          iv_objtype = ls_deleted_object-object
+          iv_objname = ls_deleted_object-obj_name ).
+        LOOP AT lt_deleted_files INTO DATA(ls_deleted_file).
+          IF NOT line_exists( lt_files[ filename = ls_deleted_file-filename ] ).
+            APPEND ls_deleted_file TO lt_files.
+          ENDIF.
+        ENDLOOP.
       ENDLOOP.
 
       IF iv_skip_git = abap_false.

@@ -350,4 +350,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     INSERT ls_file INTO TABLE rt_files.
 
   ENDMETHOD.
+
+  METHOD zif_abapgit_historical_object~build_deleted_files.
+
+    APPEND VALUE #(
+      filename = |{ to_lower( ms_tadir-obj_name ) }.doma.json|
+      deleted  = abap_true ) TO rt_files.
+
+  ENDMETHOD.
 ENDCLASS.
