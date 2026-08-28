@@ -30,7 +30,9 @@ CLASS zcl_abapgit_historical_domd DEFINITION
       IMPORTING
         is_vrsd          TYPE zif_abapgit_historical_object=>ty_vrsd
       RETURNING
-        VALUE(rs_domain) TYPE ty_domain .
+        VALUE(rs_domain) TYPE ty_domain
+      RAISING
+        zcx_abapgit_exception .
 
     METHODS serialize_aff
       IMPORTING
@@ -44,14 +46,18 @@ CLASS zcl_abapgit_historical_domd DEFINITION
       IMPORTING
         is_domain     TYPE ty_domain
       RETURNING
-        VALUE(rs_aff) TYPE zif_abapgit_aff_doma_v1=>ty_main .
+        VALUE(rs_aff) TYPE zif_abapgit_aff_doma_v1=>ty_main
+      RAISING
+        zcx_abapgit_exception .
 
     METHODS map_data_type_to_aff
       IMPORTING
         iv_ddic_type       TYPE dd01v-datatype
         iv_length          TYPE dd01v-leng
       RETURNING
-        VALUE(rv_aff_type) TYPE zif_abapgit_aff_ddic_types_v1=>ty_data_type .
+        VALUE(rv_aff_type) TYPE zif_abapgit_aff_ddic_types_v1=>ty_data_type
+      RAISING
+        zcx_abapgit_exception .
 
     METHODS get_data_type_mappings
       RETURNING
@@ -112,6 +118,22 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
         rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-decfloat16.
       WHEN 'DF34'.
         rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-decfloat34.
+      WHEN 'D16D'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df16_dec.
+      WHEN 'D16R'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df16_raw.
+      WHEN 'D16S'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df16_scl.
+      WHEN 'D16N'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-decfloat16.
+      WHEN 'D34D'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df34_dec.
+      WHEN 'D34R'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df34_raw.
+      WHEN 'D34S'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-df34_scl.
+      WHEN 'D34N'.
+        rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-decfloat34.
       WHEN 'DECF'.
         IF iv_length <= 16.
           rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-decfloat16.
@@ -129,8 +151,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     DATA(lv_aff_type) = CONV string( rv_aff_type ).
     DATA(lt_mappings) = get_data_type_mappings( ).
     IF NOT line_exists( lt_mappings[ abap = lv_aff_type ] ).
-* data types not known by the AFF format, eg. from very old releases
-      rv_aff_type = zif_abapgit_aff_ddic_types_v1=>co_data_type-char.
+      zcx_abapgit_exception=>raise(
+        |Unsupported DDIC data type { iv_ddic_type } in domain { ms_tadir-obj_name }| ).
     ENDIF.
 
   ENDMETHOD.
@@ -141,7 +163,21 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     rs_aff-format_version = '1'.
 
     rs_aff-header-description = is_domain-dd01v-ddtext.
-    rs_aff-header-original_language = is_domain-dd01v-ddlanguage.
+    IF is_domain-dd01v-ddlanguage IS INITIAL.
+      zcx_abapgit_exception=>raise( |Original language is missing in domain { ms_tadir-obj_name }| ).
+    ENDIF.
+    zcl_abapgit_convert=>language_sap1_to_bcp47(
+      EXPORTING
+        im_lang_sap1  = is_domain-dd01v-ddlanguage
+      RECEIVING
+        re_lang_bcp47 = rs_aff-header-original_language
+      EXCEPTIONS
+        no_assignment = 1
+        OTHERS        = 2 ).
+    IF sy-subrc <> 0 OR rs_aff-header-original_language IS INITIAL.
+      zcx_abapgit_exception=>raise(
+        |Unable to convert language { is_domain-dd01v-ddlanguage } in domain { ms_tadir-obj_name }| ).
+    ENDIF.
     rs_aff-header-abap_language_version = zif_abapgit_aff_types_v1=>co_abap_language_version-standard.
 
     rs_aff-format-data_type = map_data_type_to_aff(
@@ -155,6 +191,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     IF is_domain-dd01v-outputlen IS NOT INITIAL.
       rs_aff-output_characteristics-length = is_domain-dd01v-outputlen.
     ENDIF.
+    IF is_domain-dd01v-outputstyle IS NOT INITIAL.
+      rs_aff-output_characteristics-style = is_domain-dd01v-outputstyle.
+    ENDIF.
     IF is_domain-dd01v-convexit IS NOT INITIAL.
       rs_aff-output_characteristics-conversion_routine = is_domain-dd01v-convexit.
     ENDIF.
@@ -164,8 +203,21 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
     IF is_domain-dd01v-signflag IS NOT INITIAL.
       rs_aff-output_characteristics-negative_values = abap_true.
     ENDIF.
+    IF is_domain-dd01v-ampmformat IS NOT INITIAL.
+      rs_aff-output_characteristics-am_pm_time_format = abap_true.
+    ENDIF.
 
+    IF is_domain-dd01v-appendname IS NOT INITIAL.
+      APPEND VALUE #( name = is_domain-dd01v-appendname ) TO rs_aff-fixed_value_appends.
+    ENDIF.
     LOOP AT is_domain-dd07v INTO DATA(ls_dd07v).
+      IF ls_dd07v-appval IS NOT INITIAL.
+        IF ls_dd07v-domname IS NOT INITIAL
+            AND NOT line_exists( rs_aff-fixed_value_appends[ name = ls_dd07v-domname ] ).
+          APPEND VALUE #( name = ls_dd07v-domname ) TO rs_aff-fixed_value_appends.
+        ENDIF.
+        CONTINUE.
+      ENDIF.
       IF ls_dd07v-domvalue_h IS INITIAL OR ls_dd07v-domvalue_h = ls_dd07v-domvalue_l.
         APPEND VALUE #(
           fixed_value = ls_dd07v-domvalue_l
@@ -177,6 +229,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
           description = ls_dd07v-ddtext ) TO rs_aff-fixed_value_intervals.
       ENDIF.
     ENDLOOP.
+    SORT rs_aff-fixed_value_appends BY name.
+    DELETE ADJACENT DUPLICATES FROM rs_aff-fixed_value_appends COMPARING name.
 
     IF is_domain-dd01v-entitytab IS NOT INITIAL.
       rs_aff-value_table-name = is_domain-dd01v-entitytab.
@@ -205,12 +259,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
         no_version  = 1
         OTHERS      = 2.
     IF sy-subrc <> 0.
-      RETURN.
+      zcx_abapgit_exception=>raise(
+        |Unable to read historical DOMA { is_vrsd-objname } version { is_vrsd-versno }| ).
     ENDIF.
 
     READ TABLE lt_dd01v INTO rs_domain-dd01v INDEX 1.
     IF sy-subrc <> 0.
-      RETURN.
+      zcx_abapgit_exception=>raise(
+        |Historical DOMA { is_vrsd-objname } version { is_vrsd-versno } has no header| ).
     ENDIF.
 
 * the descriptions are kept in the language dependent tables
@@ -281,6 +337,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
       it_parts   = determine_parts( )
       iv_korrnum = iv_korrnum ).
 
+    SORT lt_vrsd BY objtype versno DESCENDING.
     READ TABLE lt_vrsd INTO DATA(ls_vrsd) WITH KEY objtype = 'DOMD'.
     IF sy-subrc <> 0.
       RETURN.

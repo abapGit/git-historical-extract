@@ -54,10 +54,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       lv_objtype = 'DOMD'.
     ENDIF.
 
-    SELECT SINGLE * FROM vrsd INTO @ls_vrsd
+    SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
       WHERE objtype = @lv_objtype
       AND objname = @iv_objname
-      AND korrnum = @iv_korrnum.
+      AND korrnum = @iv_korrnum
+      ORDER BY versno DESCENDING.
+    READ TABLE lt_vrsd INTO ls_vrsd INDEX 1.
     IF sy-subrc <> 0.
       RETURN.
     ENDIF.
