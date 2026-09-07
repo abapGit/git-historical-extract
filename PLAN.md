@@ -2,6 +2,8 @@
 
 Each object handler should implement `zif_abapgit_historical_object`, select the version that belongs to the processed transport, emit files compatible with the abapGit serializer used by this project, and describe every file that must be removed when the R3TR object is deleted. Existing `INTF`, `CLAS`, and `PROG` handlers are treated as baselines to harden rather than finished implementations.
 
+Translations are out of scope for all object types. Extract language-dependent texts only in the object's original language. All file sets, deletion requirements, and import/serialize-back checks below apply to this original-language-only scope.
+
 ## DTEL
 
 - **Required output:** AFF JSON (`<object-name>.dtel.json`). Classic abapGit DTEL XML is out of scope.
@@ -13,7 +15,7 @@ Each object handler should implement `zif_abapgit_historical_object`, select the
 - [ ] Return no file when the requested historical version does not exist, and raise a contextual exception for other version-reader failures.
 - [ ] Add `DTEL` routing to `zcl_abapgit_historical_objects`, including the R3TR/version-object name translation in both normal and deleted-object paths.
 - [ ] Emit `<object-name>.dtel.json` as the DTEL deletion file set and ensure no `.dtel.xml` file is generated.
-- [ ] Test domain-based and built-in data elements, translated labels, optional references, missing versions, and deletion.
+- [ ] Test domain-based and built-in data elements, original-language labels, optional references, missing versions, and deletion.
 - [ ] Run abaplint and verify an extracted AFF DTEL can be imported by abapGit and serialized back without a content diff.
 
 ## TABL
@@ -72,10 +74,10 @@ Each object handler should implement `zif_abapgit_historical_object`, select the
 - [ ] Inventory the VRSD/LIMU components that belong to a full R3TR `PROG` on supported releases, including program attributes, text elements, selection texts, screens, GUI status, documentation, and variants where abapGit treats them as part of the program.
 - [ ] Reconstruct the program as of the transport by combining changed components with their latest preceding versions.
 - [ ] Harden `REPS` reading so a missing source does not create an empty `.prog.abap`, while genuine reader failures include object/version context.
-- [ ] Generate the canonical abapGit program metadata and translation files in addition to source, with volatile fields removed and entries sorted deterministically.
+- [ ] Generate the canonical abapGit program metadata and original-language texts in addition to source, with volatile fields removed and entries sorted deterministically.
 - [ ] Add canonical auxiliary files for each supported screen, GUI status, documentation, or variant component; explicitly document any components deferred from the first implementation.
 - [ ] Extend deletion/staging so a deleted program removes dynamically named auxiliary files already present in the repository, not only `.prog.abap`.
-- [ ] Test executable reports and include programs, text elements in multiple languages, screen/status changes, component deletion, missing versions, and whole-object deletion.
+- [ ] Test executable reports and include programs, original-language text elements, screen/status changes, component deletion, missing versions, and whole-object deletion.
 - [ ] Run abaplint and verify a multi-transport PROG history through abapGit import and serialize-back comparison.
 
 ## FUGR
@@ -85,7 +87,7 @@ Each object handler should implement `zif_abapgit_historical_object`, select the
 - [ ] Reconstruct group membership at the point of each transport from version history; do not rely only on current `D010INC`/function-directory state, because members may have been renamed or deleted later.
 - [ ] Read all historical source components and function-module metadata, preserving stable include/function ordering and excluding generated code that the current abapGit FUGR serializer excludes.
 - [ ] Combine changed parts with the newest preceding versions of unchanged parts so a single-function transport cannot erase the rest of the group.
-- [ ] Emit the canonical abapGit FUGR metadata, include, function-module, screen, GUI-status, translation, and documentation files for the supported scope.
+- [ ] Emit the canonical abapGit FUGR metadata, include, function-module, screen, GUI-status, and documentation files for the supported scope, with language-dependent texts in the original language only.
 - [ ] Handle function-module and include additions, renames, and removals by marking obsolete member files for deletion in the same transport.
 - [ ] Extend whole-object deletion to remove every file belonging to the function group, including dynamically named member files.
 - [ ] Test a group with multiple function modules, TOP/UXX and custom includes, screens/statuses, documentation, member add/delete/rename history, missing versions, and full deletion.
