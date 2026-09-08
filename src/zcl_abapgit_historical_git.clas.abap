@@ -2,10 +2,12 @@ CLASS zcl_abapgit_historical_git DEFINITION PUBLIC.
   PUBLIC SECTION.
     CLASS-METHODS push
       IMPORTING
-        iv_trkorr TYPE e070-trkorr
-        it_files  TYPE zif_abapgit_historical_extract=>ty_files_tt
-        iv_url    TYPE string
-        iv_branch TYPE string
+        iv_trkorr           TYPE e070-trkorr
+        it_files            TYPE zif_abapgit_historical_extract=>ty_files_tt
+        iv_url              TYPE string
+        iv_branch           TYPE string
+      RETURNING
+        VALUE(rv_committed) TYPE abap_bool
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -157,6 +159,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
     ASSERT iv_url IS NOT INITIAL.
     ASSERT iv_branch IS NOT INITIAL.
 
+    rv_committed = abap_false.
+
     IF lines( it_files ) = 0.
 * a transport can be empty after filtering on object type, nothing to commit
       RETURN.
@@ -185,6 +189,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
       iv_parent      = ls_pull-commit
       iv_url         = iv_url
       iv_branch_name = lv_branch ).
+
+    rv_committed = abap_true.
 
   ENDMETHOD.
 ENDCLASS.

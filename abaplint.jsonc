@@ -40,6 +40,7 @@
     "select_performance": false,
 
     "7bit_ascii": true,
+    "selection_screen_texts_missing": true,
     "abapdoc": false,
     "add_test_attributes": true,
     "aff_and_xml": true,
