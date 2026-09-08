@@ -7,14 +7,14 @@ Translations are out of scope for all object types. Extract language-dependent t
 ## DTEL
 
 - **Required output:** AFF JSON (`<object-name>.dtel.json`). Classic abapGit DTEL XML is out of scope.
-- [ ] Confirm the VRSD component type and released-system function module used to read a historical data element version (including the `DTEL` to version-object translation).
-- [ ] Add `zcl_abapgit_historical_dtel` and its abapGit class XML, following the constructor, `determine_parts`, `build_files`, and `build_deleted_files` pattern used by `DOMD`.
-- [ ] Read the historical definition and original-language texts into a stable internal model, including domain references, built-in types, search-help/parameter references, headings, and field labels.
-- [ ] Map the historical model to the DTEL AFF schema supported by the project's abapGit dependency, including the AFF header, format version, original language, description, type information, references, and field labels.
-- [ ] Serialize the AFF model as deterministic UTF-8 JSON in `<object-name>.dtel.json`, matching the schema's defaults, enum mappings, property names, and omission rules so that a re-serialization produces no diff.
-- [ ] Return no file when the requested historical version does not exist, and raise a contextual exception for other version-reader failures.
-- [ ] Add `DTEL` routing to `zcl_abapgit_historical_objects`, including the R3TR/version-object name translation in both normal and deleted-object paths.
-- [ ] Emit `<object-name>.dtel.json` as the DTEL deletion file set and ensure no `.dtel.xml` file is generated.
+- [x] Confirm the VRSD component type and released-system function module used to read a historical data element version (including the `DTEL` to version-object translation).
+- [x] Add `zcl_abapgit_historical_dtel` and its abapGit class XML, following the constructor, `determine_parts`, `build_files`, and `build_deleted_files` pattern used by `DOMD`.
+- [x] Read the historical definition and original-language texts into a stable internal model, including domain references, built-in types, search-help/parameter references, headings, and field labels.
+- [x] Map the historical model to the DTEL AFF schema supported by the project's abapGit dependency, including the AFF header, format version, original language, description, type information, references, and field labels.
+- [x] Serialize the AFF model as deterministic UTF-8 JSON in `<object-name>.dtel.json`, matching the schema's defaults, enum mappings, property names, and omission rules so that a re-serialization produces no diff.
+- [x] Return no file when the requested historical version does not exist, and raise a contextual exception for other version-reader failures.
+- [x] Add `DTEL` routing to `zcl_abapgit_historical_objects`, including the R3TR/version-object name translation in both normal and deleted-object paths.
+- [x] Emit `<object-name>.dtel.json` as the DTEL deletion file set and ensure no `.dtel.xml` file is generated.
 - [ ] Test domain-based and built-in data elements, original-language labels, optional references, missing versions, and deletion.
 - [ ] Run abaplint and verify an extracted AFF DTEL can be imported by abapGit and serialized back without a content diff.
 
