@@ -8,6 +8,7 @@ SELECT-OPTIONS s_object FOR tadir-object.
 PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git' LOWER CASE.
 PARAMETERS p_gbr TYPE string OBLIGATORY DEFAULT 'main' LOWER CASE.
 PARAMETERS p_skip TYPE abap_bool AS CHECKBOX DEFAULT abap_true.
+PARAMETERS p_delay TYPE i DEFAULT 2.
 
 INCLUDE zabapgit_password_dialog.
 INCLUDE zabapgit_forms.
@@ -24,6 +25,10 @@ AT SELECTION-SCREEN OUTPUT.
   ENDIF.
 
 AT SELECTION-SCREEN.
+  IF p_delay < 0.
+    MESSAGE 'Delay must not be negative' TYPE 'E'.
+  ENDIF.
+
   IF sy-dynnr = lcl_password_dialog=>c_dynnr.
     lcl_password_dialog=>on_screen_event( sscrfields-ucomm ).
   ENDIF.
@@ -61,7 +66,8 @@ FORM extract.
         it_object     = s_object[]
         iv_url        = p_gurl
         iv_branch     = p_gbr
-        iv_skip_git   = p_skip ).
+        iv_skip_git   = p_skip
+        iv_delay      = p_delay ).
     CATCH zcx_abapgit_exception INTO DATA(lx_error).
       MESSAGE lx_error TYPE 'E'.
   ENDTRY.

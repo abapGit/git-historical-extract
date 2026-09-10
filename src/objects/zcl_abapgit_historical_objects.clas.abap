@@ -42,6 +42,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         ri_object = NEW zcl_abapgit_historical_clas( is_tadir ).
       WHEN 'DOMD'.
         ri_object = NEW zcl_abapgit_historical_domd( is_tadir ).
+      WHEN 'DTED'.
+        ri_object = NEW zcl_abapgit_historical_dtel( is_tadir ).
       WHEN 'INTF'.
         ri_object = NEW zcl_abapgit_historical_intf( is_tadir ).
       WHEN 'PROG'.
@@ -59,9 +61,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
 
     DATA(lv_objtype) = iv_objtype.
 * translate
-    IF lv_objtype = 'DOMA'.
-      lv_objtype = 'DOMD'.
-    ENDIF.
+    CASE lv_objtype.
+      WHEN 'DOMA'.
+        lv_objtype = 'DOMD'.
+      WHEN 'DTEL'.
+        lv_objtype = 'DTED'.
+    ENDCASE.
 
     SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
       WHERE objtype = @lv_objtype
@@ -84,9 +89,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
   METHOD read_deleted.
 
     DATA(lv_objtype) = iv_objtype.
-    IF lv_objtype = 'DOMA'.
-      lv_objtype = 'DOMD'.
-    ENDIF.
+    CASE lv_objtype.
+      WHEN 'DOMA'.
+        lv_objtype = 'DOMD'.
+      WHEN 'DTEL'.
+        lv_objtype = 'DTED'.
+    ENDCASE.
 
     DATA(li_object) = create( VALUE #(
       obj_name = iv_objname
