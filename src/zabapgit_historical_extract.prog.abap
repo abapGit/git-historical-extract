@@ -8,7 +8,7 @@ SELECT-OPTIONS s_object FOR tadir-object.
 PARAMETERS p_gurl TYPE string OBLIGATORY DEFAULT 'https://github.com/larshp/test-hist.git' LOWER CASE.
 PARAMETERS p_gbr TYPE string OBLIGATORY DEFAULT 'main' LOWER CASE.
 PARAMETERS p_skip TYPE abap_bool AS CHECKBOX DEFAULT abap_true.
-PARAMETERS p_delay TYPE i DEFAULT 1.
+PARAMETERS p_delay TYPE i DEFAULT 2.
 
 INCLUDE zabapgit_password_dialog.
 INCLUDE zabapgit_forms.

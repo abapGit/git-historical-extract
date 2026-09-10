@@ -12,6 +12,8 @@ CLASS ltcl_dtel DEFINITION FINAL FOR TESTING
     METHODS maps_domain FOR TESTING RAISING zcx_abapgit_exception.
     METHODS maps_predefined_type FOR TESTING RAISING zcx_abapgit_exception.
     METHODS maps_references FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS serializes_predefined_type FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS omits_predefined_type FOR TESTING RAISING zcx_abapgit_exception.
     METHODS builds_deletion FOR TESTING RAISING zcx_abapgit_exception.
 ENDCLASS.
 
@@ -127,6 +129,69 @@ CLASS ltcl_dtel IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals(
       act = ls_aff-data_type_information-category
       exp = zif_abapgit_aff_dtel_v1=>co_category-reference_clas_int_type ).
+
+  ENDMETHOD.
+
+
+  METHOD serializes_predefined_type.
+
+    DATA(lv_json) = mo_cut->serialize_aff( VALUE #(
+      ddlanguage = 'E'
+      ddtext     = 'Built-in type'
+      datatype   = 'CHAR'
+      leng       = 30 ) ).
+
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"predefinedType": {' )
+      exp = -1
+      msg = 'the predefinedType object is missing' ).
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"dataType": "CHAR"' )
+      exp = -1
+      msg = 'the data type is missing' ).
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"length": 30' )
+      exp = -1
+      msg = 'the length is missing' ).
+
+  ENDMETHOD.
+
+
+  METHOD omits_predefined_type.
+
+* a domain based data element carries the domain name, not a built-in type
+    DATA(lv_json) = mo_cut->serialize_aff( VALUE #(
+      ddlanguage = 'E'
+      ddtext     = 'Test data element'
+      refkind    = 'D'
+      domname    = 'ZTEST_DOMAIN' ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = find( val = lv_json
+                  sub = '"predefinedType"' )
+      exp = -1
+      msg = 'domain based data elements must not carry a predefinedType object' ).
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"typeName": "ZTEST_DOMAIN"' )
+      exp = -1
+      msg = 'the domain name is missing' ).
+
+* a generic reference is described by the type name alone
+    lv_json = mo_cut->serialize_aff( VALUE #(
+      ddlanguage = 'E'
+      ddtext     = 'Generic reference'
+      refkind    = 'R'
+      reftype    = 'D' ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = find( val = lv_json
+                  sub = '"predefinedType"' )
+      exp = -1
+      msg = 'generic references must not carry a predefinedType object' ).
 
   ENDMETHOD.
 

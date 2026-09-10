@@ -308,9 +308,20 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
 
   METHOD serialize_aff.
 
+    DATA(ls_aff) = map_to_aff( is_dtel ).
+
+* the JSON handler skips these paths if they carry the given default value
     DATA(lt_skip_paths) = VALUE zcl_abapgit_json_handler=>ty_skip_paths(
       ( path = '/dataTypeInformation/predefinedType/decimals' value = '0' )
       ( path = '/additionalProperties/bidirectionalOptions/basicDirection' value = 'leftToRight' ) ).
+
+* the predefinedType object only belongs to the built-in type categories, for the other
+* categories the initial length must be skipped too, so the empty object is dropped
+    IF ls_aff-data_type_information-predefined_type-data_type IS INITIAL.
+      APPEND VALUE #(
+        path  = '/dataTypeInformation/predefinedType/length'
+        value = '0' ) TO lt_skip_paths.
+    ENDIF.
 
     DATA(lt_enum_mappings) = VALUE zcl_abapgit_json_handler=>ty_enum_mappings(
       ( path     = '/dataTypeInformation/category'
@@ -323,8 +334,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
             json = 'leftToRight' )
           ( abap = zif_abapgit_aff_dtel_v1=>co_bidi_basic_direction-right_to_left
             json = 'rightToLeft' ) ) ) ).
-
-    DATA(ls_aff) = map_to_aff( is_dtel ).
 
     TRY.
         DATA(lv_json) = NEW zcl_abapgit_json_handler( )->serialize(
