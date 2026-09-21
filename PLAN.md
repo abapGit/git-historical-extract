@@ -20,16 +20,25 @@ Translations are out of scope for all object types. Extract language-dependent t
 
 ## TABL
 
-- [ ] Confirm the VRSD component types and historical reader for `TABL` definitions on the minimum supported SAP release.
-- [ ] Add `zcl_abapgit_historical_tabl` and its abapGit class XML, then register `TABL` in the object factory.
-- [ ] Read the complete historical DDIC model needed by abapGit: table/structure header, fields and includes, technical settings, foreign keys, search-help assignments, indexes, and enhancement metadata supported by the target serializer.
-- [ ] Reconstruct a transport-consistent snapshot when table subcomponents have independent version records; unchanged components must retain their latest version as of that transport.
-- [ ] Normalize volatile activation, user, date/time, position, and generated fields in the same way as the current abapGit TABL serializer.
-- [ ] Serialize deterministically to the canonical TABL file set, with stable ordering for fields, keys, indexes, and secondary metadata.
-- [ ] Cover transparent tables, structures, include structures, append structures, and explicitly reject or document unsupported pooled/cluster/IDoc variants.
-- [ ] Emit every canonical TABL filename on deletion and ensure a deleted table does not leave auxiliary files behind.
-- [ ] Test fields based on DOMA/DTEL, built-in fields, includes/appends, foreign keys, search helps, technical settings, indexes, missing versions, and deletion.
-- [ ] Run abaplint and verify abapGit import plus serialize-back equivalence for each supported TABL variant.
+- **Required output:** the AFF file set `<object-name>.tabl.json` and `<object-name>.tabl.ddic`, where the DDL source is produced by abapGit's `zcl_abapgit_object_tabl_ddl->serialize( )`, merged to abapGit `main` as #7864. Classic abapGit TABL XML is out of scope. Both `zcl_abapgit_object_tabl_ddl` and `zif_abapgit_aff_tabl_v1` are already reachable through the existing abapGit dependency, so nothing new has to be pulled in.
+- [ ] Confirm the VRSD component type (expected `TABD`) and the released-system version reader (expected `SVRS_GET_VERSION_TABD_40`) on the minimum supported SAP release, including the `TABL` to version-object translation.
+- [ ] Confirm the version reader returns the whole table in a single record. Only if subcomponents turn out to carry independent version records, reconstruct a transport-consistent snapshot by combining changed parts with the newest preceding versions, the way `CLAS` and `PROG` must.
+- [ ] Add `zcl_abapgit_historical_tabl` and its abapGit class XML, following the constructor, `determine_parts`, `build_files`, and `build_deleted_files` pattern used by `DOMD` and `DTEL`.
+- [ ] Read the historical version into `zif_abapgit_object_tabl=>ty_internal`, filling the components the DDL serializer actually consumes: `DD02V`, `DD03P`, `DD05M`, `DD08V`, `DD35V`, and `DD36M`.
+- [ ] Merge the original-language table texts returned by the version reader into `DD02V-DDTEXT` the way `read_domd` does for domains, because both the DDL `@EndUserText.label` annotation and the AFF header description are taken from that one field.
+- [ ] Call `zcl_abapgit_object_tabl_ddl->serialize( )` instead of reimplementing DDL syntax: abapGit owns the annotation set, field order, colon alignment, type mapping, and the serialize/deserialize round-trip contract, and formatting defects are fixed there rather than forked here.
+- [ ] Preserve the field, foreign-key, and value-help order delivered by the version reader, because the serializer emits in table order and any resorting changes the output.
+- [ ] Map the historical model to `zif_abapgit_aff_tabl_v1=>ty_main` for `<object-name>.tabl.json` — format version, original-language description, original language, ABAP language version — and serialize it through `zcl_abapgit_json_handler` exactly as `DOMD` and `DTEL` already do.
+- [ ] Reject up front, naming object and version in the message, each input that `zcl_abapgit_object_tabl_ddl` refuses: a `TABCLASS` other than `TRANSP`, an `EXCLASS` outside `0` to `4`, an empty `CONTFLAG`, and an unknown `AUTHCLASS`.
+- [ ] Cover transparent tables including global temporary tables, `.INCLU` includes with name suffixes, and include extensions for foreign keys and value helps. Skip structures (`INTTAB`), append structures (`APPEND`), pooled and cluster tables, and IDoc segment tables, none of which the DDL format describes.
+- [ ] Document what is deliberately not extracted: technical settings would need an AFF `TABT` type that the abapGit dependency does not provide yet, so `DD09L` is read but never written and no `<object-name>.tabl.settings.json` is produced; table indexes (`DD12V`/`DD17V`) are outside the AFF TABL format altogether; long texts and IDoc segment definitions are also dropped.
+- [ ] Record as a known fidelity limit that currency and quantity fields whose reference points at another table resolve through `DDIF_FIELDINFO_GET` against the active dictionary, so the emitted type reflects today's DDIC rather than its state at that transport; raise it upstream in abapGit if it turns out to matter.
+- [ ] Return no file when the requested historical version does not exist, and raise a contextual exception for other version-reader failures.
+- [ ] Add `TABL` routing to `zcl_abapgit_historical_objects`, including the R3TR/version-object name translation in both the normal and the deleted-object paths.
+- [ ] Emit `<object-name>.tabl.json` and `<object-name>.tabl.ddic` as the `TABL` deletion file set, and ensure no `.tabl.xml` file is generated.
+- [ ] Test fields typed by `DTEL` and by built-in types, key and `not null` flags, includes with and without suffix, foreign keys with cardinalities and `remove foreign key`, value helps, currency and quantity reference fields, rejected table classes, missing versions, and deletion.
+- [ ] Run abaplint, and check round-trip stability by feeding an extracted `.tabl.ddic` back through `zcl_abapgit_object_tabl_ddl->deserialize( )` and serializing again to identical text, driving both from the transpiled abapGit build.
+- [ ] Revisit end-to-end abapGit import and serialize-back equivalence once `zcl_abapgit_object_tabl` itself reads and writes the DDL file set; today it still serializes `TABL` as XML and never calls `zcl_abapgit_object_tabl_ddl`, so an extracted DDL table cannot round-trip through abapGit yet.
 
 ## TTYP
 
