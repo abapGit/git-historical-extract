@@ -14,6 +14,7 @@ CLASS zcl_abapgit_historical_extract DEFINITION
         iv_url        TYPE string
         iv_branch     TYPE string
         iv_skip_git   TYPE abap_bool
+        iv_delay      TYPE i
       RAISING
         zcx_abapgit_exception .
   PROTECTED SECTION.
@@ -54,6 +55,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
     DATA lt_deleted_objects TYPE SORTED TABLE OF ty_deleted_object
       WITH UNIQUE KEY request object obj_name.
     DATA lt_deleted_files   TYPE zif_abapgit_historical_extract=>ty_files_tt.
+    DATA lv_committed       TYPE abap_bool.
 
 * process transports chronologically so deletions follow earlier object changes
     SELECT trkorr, as4date, as4time FROM e070
@@ -124,7 +126,11 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       ENDLOOP.
 
       IF iv_skip_git = abap_false.
-        zcl_abapgit_historical_git=>push(
+        IF lv_committed = abap_true AND iv_delay > 0.
+          WAIT UP TO iv_delay SECONDS.
+        ENDIF.
+
+        lv_committed = zcl_abapgit_historical_git=>push(
           iv_trkorr = ls_trkorr-trkorr
           it_files  = lt_files
           iv_url    = iv_url

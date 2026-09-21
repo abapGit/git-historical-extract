@@ -23,6 +23,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_DELAY</KEY>
+     <ENTRY>Delay (seconds)</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_GBR</KEY>
      <ENTRY>Branch</ENTRY>
      <LENGTH>14</LENGTH>

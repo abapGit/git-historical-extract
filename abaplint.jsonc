@@ -40,6 +40,7 @@
     "select_performance": false,
 
     "7bit_ascii": true,
+    "selection_screen_texts_missing": true,
     "abapdoc": false,
     "add_test_attributes": true,
     "aff_and_xml": true,
@@ -58,6 +59,7 @@
     "allowed_object_types": true,
     "ambiguous_statement": true,
     "begin_end_names": true,
+    "no_external_form_calls": true,
     "begin_single_include": true,
     "call_transaction_authority_check": true,
     "chain_mainly_declarations": true,
