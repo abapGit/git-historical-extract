@@ -16,10 +16,11 @@ the DDL source being produced by abapGit's `zcl_abapgit_object_tabl_ddl`. That f
 describes transparent tables, so structures, append structures, pooled and cluster tables
 and IDoc segment tables are skipped rather than extracted.
 
-Not extracted, because the format does not carry them:
+Not extracted:
 
-* technical settings, `<name>.tabl.settings.json` needs an AFF `TABT` type which the abapGit dependency does not provide yet
-* table indexes, which are outside the ABAP file format for tables altogether
+* technical settings and table indexes, which `SVRS_GET_VERSION_TABD_40` does not return at all;
+  writing the settings would additionally need an AFF `TABT` type that the abapGit dependency does not provide,
+  so no `<name>.tabl.settings.json` is produced
 * long texts and IDoc segment definitions
 
 Known fidelity limit: a currency or quantity field whose reference points at another table

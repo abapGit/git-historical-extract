@@ -141,13 +141,17 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
   METHOD read_tabd.
 
     DATA lt_dd02v  TYPE STANDARD TABLE OF dd02v WITH DEFAULT KEY.
-    DATA lt_dd03p  TYPE STANDARD TABLE OF dd03p WITH DEFAULT KEY.
-    DATA lt_dd05m  TYPE STANDARD TABLE OF dd05m WITH DEFAULT KEY.
     DATA lt_dd08v  TYPE STANDARD TABLE OF dd08v WITH DEFAULT KEY.
-    DATA lt_dd09l  TYPE STANDARD TABLE OF dd09l WITH DEFAULT KEY.
     DATA lt_dd35v  TYPE STANDARD TABLE OF dd35v WITH DEFAULT KEY.
-    DATA lt_dd36m  TYPE STANDARD TABLE OF dd36m WITH DEFAULT KEY.
+    DATA lt_dd03v  TYPE STANDARD TABLE OF dd03v WITH DEFAULT KEY.
+    DATA lt_dd05v  TYPE STANDARD TABLE OF dd05v WITH DEFAULT KEY.
+    DATA lt_dd36v  TYPE STANDARD TABLE OF dd36v WITH DEFAULT KEY.
     DATA lt_dd02tv TYPE STANDARD TABLE OF dd02tv WITH DEFAULT KEY.
+    DATA lt_dd03tv TYPE STANDARD TABLE OF dd03tv WITH DEFAULT KEY.
+    DATA lt_dd08tv TYPE STANDARD TABLE OF dd08tv WITH DEFAULT KEY.
+    DATA ls_dd03p  TYPE dd03p.
+    DATA ls_dd05m  TYPE dd05m.
+    DATA ls_dd36m  TYPE dd36m.
 
 
     CALL FUNCTION 'SVRS_GET_VERSION_TABD_40'
@@ -155,14 +159,15 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
         object_name           = is_vrsd-objname
         versno                = is_vrsd-versno
       TABLES
-        dd02v_tab             = lt_dd02v
-        dd03p_tab             = lt_dd03p
-        dd05m_tab             = lt_dd05m
-        dd08v_tab             = lt_dd08v
-        dd09l_tab             = lt_dd09l
-        dd35v_tab             = lt_dd35v
-        dd36m_tab             = lt_dd36m
         dd02tv_tab            = lt_dd02tv
+        dd02v_tab             = lt_dd02v
+        dd03tv_tab            = lt_dd03tv
+        dd03v_tab             = lt_dd03v
+        dd05v_tab             = lt_dd05v
+        dd08tv_tab            = lt_dd08tv
+        dd08v_tab             = lt_dd08v
+        dd35v_tab             = lt_dd35v
+        dd36v_tab             = lt_dd36v
       EXCEPTIONS
         no_version            = 1
         system_failure        = 2
@@ -183,20 +188,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       rs_internal-dd02v-tabname = ms_tadir-obj_name.
     ENDIF.
 
-* the version reader already delivers fields, foreign keys and value help
-* assignments in the order the DDL serializer emits them, so nothing is sorted
-    rs_internal-dd03p = lt_dd03p.
-    rs_internal-dd05m = lt_dd05m.
-    rs_internal-dd08v = lt_dd08v.
-    rs_internal-dd35v = lt_dd35v.
-    rs_internal-dd36m = lt_dd36m.
-
-* the technical settings are kept for completeness, the DDL does not describe them
-    READ TABLE lt_dd09l INTO rs_internal-dd09l INDEX 1.
-    IF sy-subrc <> 0.
-      CLEAR rs_internal-dd09l.
-    ENDIF.
-
 * only the original language is extracted, translations are out of scope
     IF rs_internal-dd02v-masterlang IS NOT INITIAL.
       rs_internal-dd02v-ddlanguage = rs_internal-dd02v-masterlang.
@@ -214,6 +205,47 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
         rs_internal-dd02v-ddtext = ls_dd02tv-ddtext.
       ENDIF.
     ENDIF.
+
+* the version reader returns the dictionary view structures, the DDL serializer
+* works on the prepared ones, the shared components are named alike. Nothing is
+* sorted on the way, the serializer emits fields, foreign keys and value help
+* parameters in the order they arrive
+    LOOP AT lt_dd03v INTO DATA(ls_dd03v).
+      CLEAR ls_dd03p.
+      MOVE-CORRESPONDING ls_dd03v TO ls_dd03p.
+      READ TABLE lt_dd03tv INTO DATA(ls_dd03tv)
+        WITH KEY fieldname  = ls_dd03p-fieldname
+                 ddlanguage = rs_internal-dd02v-ddlanguage.
+      IF sy-subrc = 0.
+        ls_dd03p-ddtext = ls_dd03tv-ddtext.
+      ENDIF.
+      APPEND ls_dd03p TO rs_internal-dd03p.
+    ENDLOOP.
+
+    LOOP AT lt_dd05v INTO DATA(ls_dd05v).
+      CLEAR ls_dd05m.
+      MOVE-CORRESPONDING ls_dd05v TO ls_dd05m.
+      APPEND ls_dd05m TO rs_internal-dd05m.
+    ENDLOOP.
+
+    LOOP AT lt_dd36v INTO DATA(ls_dd36v).
+      CLEAR ls_dd36m.
+      MOVE-CORRESPONDING ls_dd36v TO ls_dd36m.
+      APPEND ls_dd36m TO rs_internal-dd36m.
+    ENDLOOP.
+
+* the foreign key labels are kept in a text table of their own
+    LOOP AT lt_dd08v INTO DATA(ls_dd08v).
+      READ TABLE lt_dd08tv INTO DATA(ls_dd08tv)
+        WITH KEY fieldname  = ls_dd08v-fieldname
+                 ddlanguage = rs_internal-dd02v-ddlanguage.
+      IF sy-subrc = 0.
+        ls_dd08v-ddtext = ls_dd08tv-ddtext.
+      ENDIF.
+      APPEND ls_dd08v TO rs_internal-dd08v.
+    ENDLOOP.
+
+    rs_internal-dd35v = lt_dd35v.
 
   ENDMETHOD.
 
