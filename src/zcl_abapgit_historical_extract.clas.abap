@@ -34,6 +34,21 @@ ENDCLASS.
 CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
 
 
+  METHOD get_folder.
+
+    SELECT SINGLE devclass
+      FROM tadir
+      INTO @rv_folder
+      WHERE pgmid = 'R3TR'
+      AND object = @iv_object
+      AND obj_name = @iv_obj_name.
+    IF sy-subrc <> 0.
+      rv_folder = 'DELETED'.
+    ENDIF.
+
+  ENDMETHOD.
+
+
   METHOD run.
 
     TYPES:
@@ -66,7 +81,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
       AND strkorr = ''
       ORDER BY as4date, as4time, trkorr.
 
-    SELECT e071~trkorr, e071~object, e071~obj_name
+    SELECT DISTINCT e071~trkorr, e071~object, e071~obj_name
       FROM e071
       INTO TABLE @lt_deleted_objects
       WHERE e071~trkorr IN @it_transports
@@ -137,20 +152,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
           iv_branch = iv_branch ).
       ENDIF.
     ENDLOOP.
-
-  ENDMETHOD.
-
-  METHOD get_folder.
-
-    SELECT SINGLE devclass
-      FROM tadir
-      INTO @rv_folder
-      WHERE pgmid = 'R3TR'
-      AND object = @iv_object
-      AND obj_name = @iv_obj_name.
-    IF sy-subrc <> 0.
-      rv_folder = 'DELETED'.
-    ENDIF.
 
   ENDMETHOD.
 ENDCLASS.

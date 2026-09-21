@@ -48,6 +48,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         ri_object = NEW zcl_abapgit_historical_intf( is_tadir ).
       WHEN 'PROG'.
         ri_object = NEW zcl_abapgit_historical_prog( is_tadir ).
+      WHEN 'TABD'.
+        ri_object = NEW zcl_abapgit_historical_tabl( is_tadir ).
       WHEN OTHERS.
         ASSERT 1 = 'todo'.
     ENDCASE.
@@ -66,6 +68,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DOMD'.
       WHEN 'DTEL'.
         lv_objtype = 'DTED'.
+      WHEN 'TABL'.
+        lv_objtype = 'TABD'.
     ENDCASE.
 
     SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
@@ -94,6 +98,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DOMD'.
       WHEN 'DTEL'.
         lv_objtype = 'DTED'.
+      WHEN 'TABL'.
+        lv_objtype = 'TABD'.
     ENDCASE.
 
     DATA(li_object) = create( VALUE #(
