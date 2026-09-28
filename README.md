@@ -16,11 +16,17 @@ the DDL source being produced by abapGit's `zcl_abapgit_object_tabl_ddl`. That f
 describes transparent tables, so structures, append structures, pooled and cluster tables
 and IDoc segment tables are skipped rather than extracted.
 
+The technical settings are versioned as the separate `TABT` sub object, read through
+`SVRS_GET_VERSION_TABT_40` and written as `<name>.tabl.settings.json`. The abapGit dependency
+has no AFF type for that file, so a copy of `zif_aff_tabt_v1` lives here as
+`zif_abapgit_hist_aff_tabt_v1`. The settings file is only written when the transport carries a
+settings version next to the table definition, otherwise the file from an earlier transport is kept.
+`writableByAmdp` is never written, and the storage type is written as `undefined` on releases
+without a row or column store setting.
+
 Not extracted:
 
-* technical settings and table indexes, which `SVRS_GET_VERSION_TABD_40` does not return at all;
-  writing the settings would additionally need an AFF `TABT` type that the abapGit dependency does not provide,
-  so no `<name>.tabl.settings.json` is produced
+* table indexes, which `SVRS_GET_VERSION_TABD_40` does not return at all
 * long texts and IDoc segment definitions
 
 Known fidelity limit: a currency or quantity field whose reference points at another table

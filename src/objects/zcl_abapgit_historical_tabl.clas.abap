@@ -59,6 +59,34 @@ CLASS zcl_abapgit_historical_tabl DEFINITION
         VALUE(rv_ddl) TYPE string
       RAISING
         zcx_abapgit_exception .
+
+    METHODS read_tabt
+      IMPORTING
+        is_vrsd         TYPE zif_abapgit_historical_object=>ty_vrsd
+      RETURNING
+        VALUE(rs_dd09v) TYPE dd09v
+      RAISING
+        zcx_abapgit_exception .
+
+    METHODS map_settings_to_aff
+      IMPORTING
+        is_dd09v      TYPE dd09v
+      RETURNING
+        VALUE(rs_aff) TYPE zif_abapgit_hist_aff_tabt_v1=>ty_main
+      RAISING
+        zcx_abapgit_exception .
+
+    METHODS serialize_settings
+      IMPORTING
+        is_dd09v       TYPE dd09v
+      RETURNING
+        VALUE(rv_json) TYPE string
+      RAISING
+        zcx_abapgit_exception .
+
+    METHODS get_settings_enum_mappings
+      RETURNING
+        VALUE(rt_mappings) TYPE zcl_abapgit_json_handler=>ty_enum_mappings .
 ENDCLASS.
 
 
@@ -81,6 +109,80 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
       devclass = ms_tadir-devclass ) TO rt_parts.
+
+* the technical settings are versioned as a sub object of their own
+    APPEND VALUE #(
+      objtype  = 'TABT'
+      objname  = ms_tadir-obj_name
+      type     = ms_tadir-object
+      name     = ms_tadir-obj_name
+      devclass = ms_tadir-devclass ) TO rt_parts.
+
+  ENDMETHOD.
+
+
+  METHOD get_settings_enum_mappings.
+
+    DATA(lt_size_categories) = VALUE zcl_abapgit_json_handler=>ty_json_abap_mappings(
+      ( abap = zif_abapgit_hist_aff_tabt_v1=>co_size_category-undefined
+        json = 'undefined' ) ).
+    DO 10 TIMES.
+      APPEND VALUE #(
+        abap = |{ sy-index - 1 }|
+        json = |{ sy-index - 1 }| ) TO lt_size_categories.
+    ENDDO.
+
+    rt_mappings = VALUE #(
+      ( path     = '/generalInformation/sizeCategory'
+        mappings = lt_size_categories )
+      ( path     = '/generalInformation/translation'
+        mappings = VALUE #(
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-no_language_key
+            json = 'noLanguageKey' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-standard
+            json = 'standard' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-load_table
+            json = 'loadTable' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-object_specific
+            json = 'objectSpecific' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-not_relevant
+            json = 'notRelevant' ) ) )
+      ( path     = '/buffering/state'
+        mappings = VALUE #(
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_state-not_allowed
+            json = 'notAllowed' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_state-switched_on
+            json = 'switchedOn' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_state-allowed_but_switched_off
+            json = 'allowedButSwitchedOff' ) ) )
+      ( path     = '/buffering/type'
+        mappings = VALUE #(
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_type-no_buffer
+            json = 'noBuffer' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_type-single
+            json = 'single' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_type-generic
+            json = 'generic' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_buffer_type-full
+            json = 'full' ) ) )
+      ( path     = '/dbSpecificSettings/storageType'
+        mappings = VALUE #(
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_storage_type-column_store
+            json = 'columnStore' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_storage_type-row_store
+            json = 'rowStore' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_storage_type-undefined
+            json = 'undefined' ) ) )
+      ( path     = '/dbSpecificSettings/loadUnit'
+        mappings = VALUE #(
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_load_unit-column_preferred
+            json = 'columnPreferred' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_load_unit-page_preferred
+            json = 'pagePreferred' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_load_unit-column_enforced
+            json = 'columnEnforced' )
+          ( abap = zif_abapgit_hist_aff_tabt_v1=>co_load_unit-page_enforced
+            json = 'pageEnforced' ) ) ) ).
 
   ENDMETHOD.
 
@@ -134,6 +236,40 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
     ENDIF.
     rs_aff-header-original_language = is_internal-dd02v-ddlanguage.
     rs_aff-header-abap_language_version = zif_abapgit_aff_types_v1=>co_abap_language_version-standard.
+
+  ENDMETHOD.
+
+
+  METHOD map_settings_to_aff.
+
+    FIELD-SYMBOLS <lv_value> TYPE any.
+
+
+    IF is_dd09v-tabart IS INITIAL.
+      zcx_abapgit_exception=>raise( |Data class is missing in technical settings of table { ms_tadir-obj_name }| ).
+    ENDIF.
+
+    rs_aff-format_version = '1'.
+
+    rs_aff-general_information-data_class_category = is_dd09v-tabart.
+    rs_aff-general_information-size_category = is_dd09v-tabkat.
+    rs_aff-general_information-log_changes = is_dd09v-protokoll.
+    rs_aff-general_information-translation = is_dd09v-uebersetz.
+* writableByAmdp is left out, it is not known which DD09L component carries it
+
+    rs_aff-buffering-state = is_dd09v-bufallow.
+    rs_aff-buffering-type = is_dd09v-pufferung.
+    rs_aff-buffering-nr_of_key_flds_4_generic_buff = is_dd09v-schfeldanz.
+
+* the storage type and the load unit do not exist on all releases
+    ASSIGN COMPONENT 'ROWORCOLST' OF STRUCTURE is_dd09v TO <lv_value>.
+    IF sy-subrc = 0.
+      rs_aff-db_specific_settings-storage_type = <lv_value>.
+    ENDIF.
+    ASSIGN COMPONENT 'LOAD_UNIT' OF STRUCTURE is_dd09v TO <lv_value>.
+    IF sy-subrc = 0.
+      rs_aff-db_specific_settings-load_unit = <lv_value>.
+    ENDIF.
 
   ENDMETHOD.
 
@@ -250,6 +386,37 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD read_tabt.
+
+    DATA lt_dd09v TYPE STANDARD TABLE OF dd09v WITH DEFAULT KEY.
+
+
+    CALL FUNCTION 'SVRS_GET_VERSION_TABT_40'
+      EXPORTING
+        object_name           = is_vrsd-objname
+        versno                = is_vrsd-versno
+      TABLES
+        dd09v_tab             = lt_dd09v
+      EXCEPTIONS
+        no_version            = 1
+        system_failure        = 2
+        communication_failure = 3
+        OTHERS                = 4.
+    IF sy-subrc = 1.
+      RETURN.
+    ELSEIF sy-subrc <> 0.
+      zcx_abapgit_exception=>raise(
+        |Unable to read historical TABL settings { is_vrsd-objname } version { is_vrsd-versno }, subrc { sy-subrc }| ).
+    ENDIF.
+
+    READ TABLE lt_dd09v INTO rs_dd09v INDEX 1.
+    IF sy-subrc <> 0.
+      CLEAR rs_dd09v.
+    ENDIF.
+
+  ENDMETHOD.
+
+
   METHOD serialize_aff.
 
     DATA(ls_aff) = map_to_aff( is_internal ).
@@ -269,6 +436,34 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
 
 * abapGit owns the DDL format, this only hands it the historical definition
     rv_ddl = NEW zcl_abapgit_object_tabl_ddl( )->serialize( is_internal ).
+
+  ENDMETHOD.
+
+
+  METHOD serialize_settings.
+
+    DATA(ls_aff) = map_settings_to_aff( is_dd09v ).
+
+* the JSON handler skips these paths if they carry the given default value
+    DATA(lt_skip_paths) = VALUE zcl_abapgit_json_handler=>ty_skip_paths(
+      ( path = '/generalInformation/sizeCategory' value = '0' )
+      ( path = '/generalInformation/translation' value = 'noLanguageKey' )
+      ( path = '/buffering/state' value = 'notAllowed' )
+      ( path = '/buffering/type' value = 'noBuffer' )
+      ( path = '/buffering/nrOfKeyFlds4GenericBuff' value = '0' )
+      ( path = '/dbSpecificSettings/storageType' value = 'columnStore' )
+      ( path = '/dbSpecificSettings/loadUnit' value = 'columnPreferred' ) ).
+
+    TRY.
+        DATA(lv_json) = NEW zcl_abapgit_json_handler( )->serialize(
+          iv_data          = ls_aff
+          iv_enum_mappings = get_settings_enum_mappings( )
+          iv_skip_paths    = lt_skip_paths ).
+      CATCH cx_root INTO DATA(lx_error).
+        zcx_abapgit_exception=>raise_with_text( lx_error ).
+    ENDTRY.
+
+    rv_json = zcl_abapgit_convert=>xstring_to_string_utf8( lv_json ).
 
   ENDMETHOD.
 
@@ -303,6 +498,22 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.ddic|
       source   = serialize_ddic( ls_internal ) ) TO rt_files.
 
+* the settings file is optional, without a settings version in this transport the
+* file from an earlier transport stays as it is
+    READ TABLE lt_vrsd INTO DATA(ls_vrsd_tabt) WITH KEY objtype = 'TABT'.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_dd09v) = read_tabt( ls_vrsd_tabt ).
+    IF ls_dd09v IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    APPEND VALUE #(
+      filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.settings.json|
+      source   = serialize_settings( ls_dd09v ) ) TO rt_files.
+
   ENDMETHOD.
 
 
@@ -314,6 +525,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
 
     APPEND VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.ddic|
+      deleted  = abap_true ) TO rt_files.
+
+    APPEND VALUE #(
+      filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.settings.json|
       deleted  = abap_true ) TO rt_files.
 
   ENDMETHOD.
