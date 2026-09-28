@@ -61,15 +61,24 @@ Translations are out of scope for all object types. Extract language-dependent t
 
 ## INTF
 
+- **Required output:** the AFF file set `<object-name>.intf.abap` and `<object-name>.intf.json`, matching abapGit's INTF serializer with AFF enabled. Classic abapGit INTF XML is out of scope.
 - [x] Baseline handler, factory routing, source extraction, and main-file deletion exist.
-- [ ] Verify which VRSD records represent the interface source and metadata on every supported SAP release, and select the correct version deterministically if more than one record matches a transport.
-- [ ] Do not emit an empty `.intf.abap` file when the historical source cannot be read; distinguish a missing version from a reader error.
-- [ ] Compare the generated source and companion metadata with the current abapGit INTF serializer, adding the canonical metadata file if source-only output is not round-trip safe.
-- [ ] Preserve interface annotations, aliases, events, types, constants, method signatures, and ABAP Doc contained in the historical source.
-- [ ] Normalize line endings, trailing whitespace, and final newline consistently with abapGit.
-- [ ] Expand deletion handling to every emitted INTF file.
-- [ ] Test interfaces with inheritance, aliases, events, typed parameters, exceptions, ABAP Doc, empty optional sections, missing versions, and deletion.
-- [ ] Run abaplint and verify abapGit import plus serialize-back equivalence.
+- [x] Select the newest `INTF` version of the transport deterministically when a transport holds more than one.
+- [ ] Verify on a system that the `INTF` version sub object carries both the source and the metadata on every supported release.
+- [x] Read the historical metadata with `SVRS_GET_VERSION_INTF_40` into `VSEOINTERF`, `VSEOATTRIB`, `VSEOMETHOD`, `VSEOEVENT`, `VSEOPARAM`, and `VSEOEXCEP`; the parameter names are taken from existing SAPlink code that calls it with `PVSEOCOMPRI`.
+- [ ] Confirm on a system that the `P*` table parameters of `SVRS_GET_VERSION_INTF_40` are typed with the `VSEO*` views named above, and that the views carry `LANGU` and `DESCRIPT`, because a wrong line type dumps with `CALL_FUNCTION_CONFLICT_TYPE` rather than raising.
+- [ ] Find the line type of the `TYPE_TAB` parameter and add the type descriptions; they are not read today, so `descriptions/types` is always missing from the JSON.
+- [x] Map the historical model to `zif_abapgit_aff_intf_v1=>ty_main` — format version, original-language description, original language, ABAP language version, category, proxy flag, and the original-language descriptions of attributes, methods, method parameters and exceptions, and events with their parameters — dropping components without text as abapGit does, and serialize it through `zcl_abapgit_json_handler` with the category enum mapping and default skipping copied from abapGit's INTF serializer; checked against the transpiled abapGit JSON handler.
+- [x] Reject a category without AFF value, such as `52` business instance components, naming the interface in the message.
+- [x] Emit either both files or none: skip the interface when the source is empty, when the metadata version does not exist, or when the reader returns no header, and raise a contextual exception for other metadata reader failures.
+- [ ] Distinguish a missing version from a reader error in `zcl_abapgit_historical_source=>read_reps( )` too; today it returns an empty source for both, and the interface is then skipped silently.
+- [x] End the `.intf.abap` file with a newline as abapGit's `add_abap( )` does; line endings are `\n` and trailing blanks of the 255 character source lines are dropped by `concat_lines_of`.
+- [ ] Preserve interface annotations, aliases, events, types, constants, method signatures, and ABAP Doc contained in the historical source; the source is taken over verbatim, so this only needs confirming on a system.
+- [x] Emit `<object-name>.intf.abap` and `<object-name>.intf.json` as the INTF deletion file set.
+- [x] Test the header, ABAP language version, and category mapping, attribute, method, parameter, exception, and event descriptions, original-language filtering, rejected categories, the serialized JSON, and deletion.
+- [ ] Extend the tests to the cases that need either a system or a stubbed version reader: inheritance, aliases, ABAP Doc, empty optional sections, and a missing version.
+- [x] Run abaplint.
+- [ ] Verify an extracted interface imports into abapGit with AFF enabled and serializes back without a content diff.
 
 ## CLAS
 
