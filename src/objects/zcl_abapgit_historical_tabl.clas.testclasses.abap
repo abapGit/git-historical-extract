@@ -15,6 +15,9 @@ CLASS ltcl_tabl DEFINITION FINAL FOR TESTING
     METHODS table_with_references
       RETURNING
         VALUE(rs_internal) TYPE zif_abapgit_object_tabl=>ty_internal.
+    METHODS technical_settings
+      RETURNING
+        VALUE(rs_dd09v) TYPE dd09v.
 
     METHODS maps_header FOR TESTING RAISING zcx_abapgit_exception.
     METHODS serializes_header FOR TESTING RAISING zcx_abapgit_exception.
@@ -28,6 +31,11 @@ CLASS ltcl_tabl DEFINITION FINAL FOR TESTING
     METHODS rejects_activation_type FOR TESTING RAISING zcx_abapgit_exception.
     METHODS rejects_data_maintenance FOR TESTING RAISING zcx_abapgit_exception.
     METHODS builds_deletion FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS maps_settings FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS serializes_settings FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS omits_default_settings FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS serializes_storage_settings FOR TESTING RAISING zcx_abapgit_exception.
+    METHODS rejects_data_class FOR TESTING RAISING zcx_abapgit_exception.
 ENDCLASS.
 
 
@@ -99,6 +107,21 @@ CLASS ltcl_tabl IMPLEMENTATION.
       shtable    = 'ZTEST_TABL'
       shfield    = 'VALUE'
       flposition = 1 ) TO rs_internal-dd36m.
+
+  ENDMETHOD.
+
+
+  METHOD technical_settings.
+
+* the storage type and the load unit are left initial, they do not exist on all releases
+    rs_dd09v-tabname    = 'ZTEST_TABL'.
+    rs_dd09v-tabart     = 'APPL1'.
+    rs_dd09v-tabkat     = '3'.
+    rs_dd09v-protokoll  = abap_true.
+    rs_dd09v-uebersetz  = abap_true.
+    rs_dd09v-bufallow   = 'X'.
+    rs_dd09v-pufferung  = 'G'.
+    rs_dd09v-schfeldanz = 2.
 
   ENDMETHOD.
 
@@ -327,7 +350,7 @@ CLASS ltcl_tabl IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals(
       act = lines( lt_files )
-      exp = 2 ).
+      exp = 3 ).
     cl_abap_unit_assert=>assert_equals(
       act = lt_files[ 1 ]-filename
       exp = 'ztest_tabl.tabl.json' ).
@@ -336,6 +359,164 @@ CLASS ltcl_tabl IMPLEMENTATION.
       act = lt_files[ 2 ]-filename
       exp = 'ztest_tabl.tabl.ddic' ).
     cl_abap_unit_assert=>assert_true( lt_files[ 2 ]-deleted ).
+    cl_abap_unit_assert=>assert_equals(
+      act = lt_files[ 3 ]-filename
+      exp = 'ztest_tabl.tabl.settings.json' ).
+    cl_abap_unit_assert=>assert_true( lt_files[ 3 ]-deleted ).
+
+  ENDMETHOD.
+
+
+  METHOD maps_settings.
+
+    DATA(ls_aff) = mo_cut->map_settings_to_aff( technical_settings( ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-format_version
+      exp = '1' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-general_information-data_class_category
+      exp = 'APPL1' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-general_information-size_category
+      exp = zif_abapgit_hist_aff_tabt_v1=>co_size_category-cat_3 ).
+    cl_abap_unit_assert=>assert_true( ls_aff-general_information-log_changes ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-general_information-translation
+      exp = zif_abapgit_hist_aff_tabt_v1=>co_translation_type-standard ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-buffering-state
+      exp = zif_abapgit_hist_aff_tabt_v1=>co_buffer_state-switched_on ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-buffering-type
+      exp = zif_abapgit_hist_aff_tabt_v1=>co_buffer_type-generic ).
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_aff-buffering-nr_of_key_flds_4_generic_buff
+      exp = 2 ).
+
+  ENDMETHOD.
+
+
+  METHOD serializes_settings.
+
+    DATA lt_expected TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+
+    APPEND `{` TO lt_expected.
+    APPEND `  "formatVersion": "1",` TO lt_expected.
+    APPEND `  "generalInformation": {` TO lt_expected.
+    APPEND `    "dataClassCategory": "APPL1",` TO lt_expected.
+    APPEND `    "sizeCategory": "3",` TO lt_expected.
+    APPEND `    "logChanges": true,` TO lt_expected.
+    APPEND `    "translation": "standard"` TO lt_expected.
+    APPEND `  },` TO lt_expected.
+    APPEND `  "buffering": {` TO lt_expected.
+    APPEND `    "state": "switchedOn",` TO lt_expected.
+    APPEND `    "type": "generic",` TO lt_expected.
+    APPEND `    "nrOfKeyFlds4GenericBuff": 2` TO lt_expected.
+    APPEND `  },` TO lt_expected.
+    APPEND `  "dbSpecificSettings": {` TO lt_expected.
+    APPEND `    "storageType": "undefined"` TO lt_expected.
+    APPEND `  }` TO lt_expected.
+    APPEND `}` TO lt_expected.
+    APPEND `` TO lt_expected.
+
+    cl_abap_unit_assert=>assert_equals(
+      act = mo_cut->serialize_settings( technical_settings( ) )
+      exp = concat_lines_of( table = lt_expected
+                             sep   = |\n| ) ).
+
+  ENDMETHOD.
+
+
+  METHOD omits_default_settings.
+
+    DATA ls_dd09v TYPE dd09v.
+
+    ls_dd09v-tabname  = 'ZTEST_TABL'.
+    ls_dd09v-tabart   = 'APPL0'.
+    ls_dd09v-tabkat   = '0'.
+    ls_dd09v-bufallow = 'N'.
+
+    DATA(lv_json) = mo_cut->serialize_settings( ls_dd09v ).
+
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"dataClassCategory": "APPL0"' )
+      exp = -1
+      msg = 'the data class is required' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = find( val = lv_json
+                  sub = '"sizeCategory"' )
+      exp = -1
+      msg = 'size category 0 is the default' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = find( val = lv_json
+                  sub = '"translation"' )
+      exp = -1
+      msg = 'no language key is the default' ).
+    cl_abap_unit_assert=>assert_equals(
+      act = find( val = lv_json
+                  sub = '"buffering"' )
+      exp = -1
+      msg = 'buffering not allowed is the default' ).
+
+  ENDMETHOD.
+
+
+  METHOD serializes_storage_settings.
+
+    DATA ls_dd09v         TYPE dd09v.
+    DATA lv_has_load_unit TYPE abap_bool.
+
+    FIELD-SYMBOLS <lv_value> TYPE any.
+
+
+    ls_dd09v = technical_settings( ).
+
+    ASSIGN COMPONENT 'ROWORCOLST' OF STRUCTURE ls_dd09v TO <lv_value>.
+    IF sy-subrc <> 0.
+* the release does not know the storage type
+      RETURN.
+    ENDIF.
+    <lv_value> = 'R'.
+    ASSIGN COMPONENT 'LOAD_UNIT' OF STRUCTURE ls_dd09v TO <lv_value>.
+    IF sy-subrc = 0.
+      <lv_value> = 'Q'.
+      lv_has_load_unit = abap_true.
+    ENDIF.
+
+    DATA(lv_json) = mo_cut->serialize_settings( ls_dd09v ).
+
+    cl_abap_unit_assert=>assert_differs(
+      act = find( val = lv_json
+                  sub = '"storageType": "rowStore"' )
+      exp = -1
+      msg = 'the storage type is missing' ).
+    IF lv_has_load_unit = abap_true.
+      cl_abap_unit_assert=>assert_differs(
+        act = find( val = lv_json
+                    sub = '"loadUnit": "pageEnforced"' )
+        exp = -1
+        msg = 'the load unit is missing' ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD rejects_data_class.
+
+    DATA ls_dd09v TYPE dd09v.
+
+    ls_dd09v = technical_settings( ).
+    CLEAR ls_dd09v-tabart.
+
+    TRY.
+        mo_cut->map_settings_to_aff( ls_dd09v ).
+        cl_abap_unit_assert=>fail( 'the missing data class must be reported' ).
+      CATCH zcx_abapgit_exception INTO DATA(lx_error).
+        cl_abap_unit_assert=>assert_char_cp( act = lx_error->get_text( )
+                                             exp = '*Data class is missing*ZTEST_TABL*' ).
+    ENDTRY.
 
   ENDMETHOD.
 ENDCLASS.
