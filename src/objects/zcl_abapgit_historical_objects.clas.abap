@@ -72,6 +72,15 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'TABD'.
     ENDCASE.
 
+* a class is versioned in parts only, there is no CLAS version to look for, the handler
+* checks itself whether the transport carries any of its parts
+    IF lv_objtype = 'CLAS'.
+      rt_files = create( VALUE #(
+        obj_name = iv_objname
+        object   = lv_objtype ) )->build_files( iv_korrnum ).
+      RETURN.
+    ENDIF.
+
     SELECT * FROM vrsd INTO TABLE @DATA(lt_vrsd)
       WHERE objtype = @lv_objtype
       AND objname = @iv_objname
