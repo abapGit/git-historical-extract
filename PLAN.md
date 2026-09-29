@@ -66,7 +66,7 @@ Translations are out of scope for all object types. Extract language-dependent t
 - [x] Select the newest `INTF` version of the transport deterministically when a transport holds more than one.
 - [ ] Verify on a system that the `INTF` version sub object carries both the source and the metadata on every supported release.
 - [x] Read the historical metadata with `SVRS_GET_VERSION_INTF_40` into `VSEOINTERF`, `VSEOATTRIB`, `VSEOMETHOD`, `VSEOEVENT`, `VSEOPARAM`, and `VSEOEXCEP`; the parameter names are taken from existing SAPlink code that calls it with `PVSEOCOMPRI`.
-- [ ] Confirm on a system that the `P*` table parameters of `SVRS_GET_VERSION_INTF_40` are typed with the `VSEO*` views named above, and that the views carry `LANGU` and `DESCRIPT`, because a wrong line type dumps with `CALL_FUNCTION_CONFLICT_TYPE` rather than raising.
+- [ ] Confirm on a system that the `P*` table parameters of `SVRS_GET_VERSION_INTF_40` are typed with the `VSEO*` views named above, and that the views carry `LANGU` and `DESCRIPT`; a wrong line type raises `CX_SY_DYN_CALL_ILLEGAL_TYPE`, which `read_intf( )` does not catch, so the extraction stops.
 - [ ] Find the line type of the `TYPE_TAB` parameter and add the type descriptions; they are not read today, so `descriptions/types` is always missing from the JSON.
 - [x] Map the historical model to `zif_abapgit_aff_intf_v1=>ty_main` — format version, original-language description, original language, ABAP language version, category, proxy flag, and the original-language descriptions of attributes, methods, method parameters and exceptions, and events with their parameters — dropping components without text as abapGit does, and serialize it through `zcl_abapgit_json_handler` with the category enum mapping and default skipping copied from abapGit's INTF serializer; checked against the transpiled abapGit JSON handler.
 - [x] Reject a category without AFF value, such as `52` business instance components, naming the interface in the message.
@@ -82,16 +82,26 @@ Translations are out of scope for all object types. Extract language-dependent t
 
 ## CLAS
 
+- **Required output:** the AFF file set `<object-name>.clas.abap` and `<object-name>.clas.json`, plus `<object-name>.clas.definitions.abap`, `.clas.implementations.abap`, `.clas.macros.abap`, and `.clas.testclasses.abap` for the local includes that have content. The metadata file is typed by `zif_abapgit_aff_clas_v1`, which abapGit ships but does not register for AFF yet, so the file set follows the AFF specification rather than abapGit's classic `locals_def`/`locals_imp` names. Classic abapGit CLAS XML is out of scope.
 - [x] Baseline handler and factory routing exist for `CPUB`, `CPRO`, `CPRI`, `METH`, and the four `CINC` names.
-- [ ] Define the historical class snapshot algorithm: for each transport, combine changed components with the newest preceding versions of unchanged components instead of rebuilding the class from only that transport's VRSD rows.
-- [ ] Restrict `METH` discovery to the exact class and determine historical method membership so removed or unrelated methods cannot leak into the output.
-- [ ] Assemble public, protected, and private sections plus method implementations in deterministic order, with exactly one class implementation wrapper.
-- [ ] Read and emit local definitions, local implementations, macros, and test classes from `CINC` as their canonical abapGit auxiliary files; omit only components that are genuinely empty at that point in history.
-- [ ] Compare class metadata with the current abapGit CLAS serializer and add the canonical metadata file when required for descriptions, language version, final/abstract state, or other non-source attributes.
-- [ ] Treat missing individual components as absent, but suppress the object or raise a contextual error when its essential definition cannot be reconstructed.
-- [ ] Expand deletion handling to the main source, metadata, and all fixed auxiliary class filenames.
-- [ ] Test multi-method classes, method additions/deletions, visibility changes, empty and populated local includes, test classes, inheritance/interfaces, missing versions, and deletion.
-- [ ] Run abaplint and verify that several incremental class transports import and serialize back without losing unchanged methods or producing diffs.
+- [x] Route `CLAS` straight to its handler in `zcl_abapgit_historical_objects=>read( )`; VRSD has no `CLAS` version, only the parts, so the generic version lookup never let a class through.
+- [x] Rebuild the class as of each transport from the newest version of every part released up to that transport, through `zcl_abapgit_historical_source=>read_snapshot( )`, which orders releases by `E070` date, time, and request exactly as the extraction does and ignores versions without a released request; skip the class when the transport carries no version of any part.
+- [x] Restrict `METH` discovery to the exact class, filtering out classes matched by the `_` wildcard of the `LIKE` pattern, and keep only methods declared by `METHODS` or `CLASS-METHODS` in the historical sections, or belonging to a declared interface or an interface that one of those includes as of the same transport; when an included interface has no version, such as a SAP interface, interface methods are kept rather than guessed away.
+- [x] Assemble the sections and the method implementations in the SE24 layout, methods in alphabetical order, closing the definition with `ENDCLASS` only when the private section include does not already end with it.
+- [ ] Confirm on a system that the definition's `ENDCLASS` is not part of the `CPRI` include, and compare the assembled main source with abapGit's `serialize_abap( )` output, including the `*"*` comment lines SAP writes into the section includes, which are kept verbatim.
+- [x] Read the local definitions from `CDEF` or `CINC`, whichever is newer, and the local implementations, macros, and test classes from `CINC`; skip an include that holds only `*"*` comments, as abapGit does, and mark its file deleted so a file from an earlier transport goes away.
+- [ ] Confirm on a system which of `CDEF` and `CINC` the local definitions are versioned as; abapTimeMachine reads `CDEF`, the baseline read `CINC`.
+- [x] Read the class metadata with `SVRS_GET_VERSION_CLSD_40` into `VSEOCLASS` and the `VSEO*` component views, and map it to `zif_abapgit_aff_clas_v1=>ty_main` — description, original language, ABAP language version, category, fix point arithmetic, message class, and the original-language component descriptions, shared with INTF in `zcl_abapgit_historical_oo`.
+- [ ] Confirm the signature of `SVRS_GET_VERSION_CLSD_40` on a system. It is guessed from `SVRS_GET_VERSION_INTF_40`: a `CX_SY_DYN_CALL_*` error drops the component tables first and then the metadata file, and a header without language is taken as a wrong guess too, so today a class can be extracted without `.clas.json` or without descriptions and nobody is told.
+- [ ] Find where class component texts are versioned if `CLSD` does not return them, possibly the `CPUB`, `CPRO`, and `CPRI` readers, and read type descriptions, which are not read for INTF either.
+- [x] Reject a category without AFF value, naming the class in the message.
+- [x] Treat missing sections, includes, and methods as absent, and skip the class when the public section, which holds the `CLASS ... DEFINITION` statement, cannot be read.
+- [x] Emit the main source, the metadata file, and all four include files as the CLAS deletion file set.
+- [ ] Decide whether the test class include should also honour `VSEOCLASS-WITH_UNIT_TESTS` as abapGit does; today only its content decides.
+- [x] Test the declaration parser, including chains, comments, literals, and interfaces, method membership, the include content rule, and the main source layout; these tests run in the transpiler because `zcl_abapgit_hist_clas_source` has no database access. Test the metadata mapping, the serialized JSON checked against the transpiled abapGit JSON handler, file names, and deletion.
+- [ ] Extend the tests to the cases that need either a system or a stubbed version reader: snapshots across several transports, method additions and deletions, nested interfaces, `CDEF` versus `CINC`, and a missing version.
+- [x] Run abaplint.
+- [ ] Verify that several incremental class transports extract to the same files as serializing the class at each point, once abapGit can import CLAS AFF.
 
 ## PROG
 

@@ -13,15 +13,10 @@ CLASS zcl_abapgit_historical_intf DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
 
-    TYPES:
-      BEGIN OF ty_intf,
-        vseointerf TYPE vseointerf,
-        attributes TYPE STANDARD TABLE OF vseoattrib WITH DEFAULT KEY,
-        methods    TYPE STANDARD TABLE OF vseomethod WITH DEFAULT KEY,
-        events     TYPE STANDARD TABLE OF vseoevent WITH DEFAULT KEY,
-        parameters TYPE STANDARD TABLE OF vseoparam WITH DEFAULT KEY,
-        exceptions TYPE STANDARD TABLE OF vseoexcep WITH DEFAULT KEY,
-      END OF ty_intf .
+    TYPES BEGIN OF ty_intf.
+    TYPES vseointerf TYPE vseointerf.
+    INCLUDE TYPE zcl_abapgit_historical_oo=>ty_components.
+    TYPES END OF ty_intf.
 
     DATA ms_tadir TYPE zif_abapgit_definitions=>ty_tadir .
 
@@ -52,12 +47,6 @@ CLASS zcl_abapgit_historical_intf DEFINITION
         VALUE(rs_aff) TYPE zif_abapgit_aff_intf_v1=>ty_main
       RAISING
         zcx_abapgit_exception .
-
-    METHODS map_descriptions
-      IMPORTING
-        is_intf                TYPE ty_intf
-      RETURNING
-        VALUE(rs_descriptions) TYPE zif_abapgit_aff_oo_types_v1=>ty_descriptions .
 
     METHODS get_category_mappings
       RETURNING
@@ -108,72 +97,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD map_descriptions.
-
-* follows abapGit's INTF serializer: components without any text are left out. The version
-* reader can return a row per language, so texts are read in the original language only
-    DATA ls_method LIKE LINE OF rs_descriptions-methods.
-    DATA ls_event  LIKE LINE OF rs_descriptions-events.
-
-    DATA(lv_langu) = is_intf-vseointerf-langu.
-
-    LOOP AT is_intf-attributes INTO DATA(ls_attribute)
-        WHERE langu = lv_langu AND descript IS NOT INITIAL.
-      INSERT VALUE #(
-        name        = ls_attribute-cmpname
-        description = ls_attribute-descript ) INTO TABLE rs_descriptions-attributes.
-    ENDLOOP.
-
-    LOOP AT is_intf-methods INTO DATA(ls_vseomethod).
-      CLEAR ls_method.
-      ls_method-name = ls_vseomethod-cmpname.
-      READ TABLE is_intf-methods INTO DATA(ls_method_text)
-        WITH KEY cmpname = ls_vseomethod-cmpname langu = lv_langu.
-      IF sy-subrc = 0.
-        ls_method-description = ls_method_text-descript.
-      ENDIF.
-      LOOP AT is_intf-parameters INTO DATA(ls_parameter)
-          WHERE cmpname = ls_vseomethod-cmpname AND langu = lv_langu AND descript IS NOT INITIAL.
-        INSERT VALUE #(
-          name        = ls_parameter-sconame
-          description = ls_parameter-descript ) INTO TABLE ls_method-parameters.
-      ENDLOOP.
-      LOOP AT is_intf-exceptions INTO DATA(ls_exception)
-          WHERE cmpname = ls_vseomethod-cmpname AND langu = lv_langu AND descript IS NOT INITIAL.
-        INSERT VALUE #(
-          name        = ls_exception-sconame
-          description = ls_exception-descript ) INTO TABLE ls_method-exceptions.
-      ENDLOOP.
-      IF ls_method-description IS NOT INITIAL
-          OR ls_method-parameters IS NOT INITIAL
-          OR ls_method-exceptions IS NOT INITIAL.
-* a method with rows in several languages yields the same entry again, which the unique key drops
-        INSERT ls_method INTO TABLE rs_descriptions-methods.
-      ENDIF.
-    ENDLOOP.
-
-    LOOP AT is_intf-events INTO DATA(ls_vseoevent).
-      CLEAR ls_event.
-      ls_event-name = ls_vseoevent-cmpname.
-      READ TABLE is_intf-events INTO DATA(ls_event_text)
-        WITH KEY cmpname = ls_vseoevent-cmpname langu = lv_langu.
-      IF sy-subrc = 0.
-        ls_event-description = ls_event_text-descript.
-      ENDIF.
-      LOOP AT is_intf-parameters INTO ls_parameter
-          WHERE cmpname = ls_vseoevent-cmpname AND langu = lv_langu AND descript IS NOT INITIAL.
-        INSERT VALUE #(
-          name        = ls_parameter-sconame
-          description = ls_parameter-descript ) INTO TABLE ls_event-parameters.
-      ENDLOOP.
-      IF ls_event-description IS NOT INITIAL OR ls_event-parameters IS NOT INITIAL.
-        INSERT ls_event INTO TABLE rs_descriptions-events.
-      ENDIF.
-    ENDLOOP.
-
-  ENDMETHOD.
-
-
   METHOD map_to_aff.
 
     rs_aff-format_version = '1'.
@@ -182,15 +105,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
       zcx_abapgit_exception=>raise( |Original language is missing in interface { ms_tadir-obj_name }| ).
     ENDIF.
     rs_aff-header-original_language = is_intf-vseointerf-langu.
-
-    CASE is_intf-vseointerf-unicode.
-      WHEN zif_abapgit_aff_types_v1=>co_abap_language_version_src-key_user
-          OR zif_abapgit_aff_types_v1=>co_abap_language_version_src-cloud_development.
-        rs_aff-header-abap_language_version = is_intf-vseointerf-unicode.
-      WHEN OTHERS.
-* space is a non-Unicode interface on old releases, which is standard ABAP as well
-        rs_aff-header-abap_language_version = zif_abapgit_aff_types_v1=>co_abap_language_version_src-standard.
-    ENDCASE.
+    rs_aff-header-abap_language_version = zcl_abapgit_historical_oo=>map_abap_language_version(
+      is_intf-vseointerf-unicode ).
 
     rs_aff-category = is_intf-vseointerf-category.
     DATA(lt_mappings) = get_category_mappings( ).
@@ -201,7 +117,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
     ENDIF.
     rs_aff-proxy = is_intf-vseointerf-clsproxy.
 
-    rs_aff-descriptions = map_descriptions( is_intf ).
+    rs_aff-descriptions = zcl_abapgit_historical_oo=>map_descriptions(
+      is_components = CORRESPONDING #( is_intf )
+      iv_language   = is_intf-vseointerf-langu ).
 
   ENDMETHOD.
 
