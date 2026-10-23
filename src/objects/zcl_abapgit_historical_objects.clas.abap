@@ -50,8 +50,11 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         ri_object = NEW zcl_abapgit_historical_prog( is_tadir ).
       WHEN 'TABD'.
         ri_object = NEW zcl_abapgit_historical_tabl( is_tadir ).
+      WHEN 'TTYD'.
+        ri_object = NEW zcl_abapgit_historical_ttyp( is_tadir ).
       WHEN OTHERS.
-        ASSERT 1 = 'todo'.
+* not supported, return nothing
+        RETURN.
     ENDCASE.
 
   ENDMETHOD.
@@ -70,6 +73,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DTED'.
       WHEN 'TABL'.
         lv_objtype = 'TABD'.
+      WHEN 'TTYP'.
+        lv_objtype = 'TTYD'.
     ENDCASE.
 
 * a class is versioned in parts only, there is no CLAS version to look for, the handler
@@ -94,6 +99,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
     DATA(li_object) = create( VALUE #(
       obj_name = ls_vrsd-objname
       object   = ls_vrsd-objtype ) ).
+    IF li_object IS NOT BOUND.
+      RETURN.
+    ENDIF.
 
     rt_files = li_object->build_files( iv_korrnum ).
 
@@ -109,11 +117,16 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DTED'.
       WHEN 'TABL'.
         lv_objtype = 'TABD'.
+      WHEN 'TTYP'.
+        lv_objtype = 'TTYD'.
     ENDCASE.
 
     DATA(li_object) = create( VALUE #(
       obj_name = iv_objname
       object   = lv_objtype ) ).
+    IF li_object IS NOT BOUND.
+      RETURN.
+    ENDIF.
 
     rt_files = li_object->build_deleted_files( ).
 

@@ -93,13 +93,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
       IF lv_task_user IS NOT INITIAL.
         lv_task_line = |{ lv_task_line } ({ lv_task_user })|.
       ENDIF.
-      APPEND lv_task_line TO lt_task_lines.
+      INSERT lv_task_line INTO TABLE lt_task_lines.
 
       LOOP AT lt_task_objects INTO DATA(ls_task_object)
           WHERE trkorr = ls_task-trkorr.
         DATA(lv_task_object_name) = CONV string( ls_task_object-obj_name ).
         CONDENSE lv_task_object_name.
-        APPEND |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }| TO lt_task_lines.
+        INSERT |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }|
+          INTO TABLE lt_task_lines.
       ENDLOOP.
     ENDLOOP.
 
@@ -132,12 +133,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
 
   METHOD build_stage.
 
+    DATA lv_data TYPE xstring.
+
     ro_stage = NEW zcl_abapgit_stage( ).
 
     LOOP AT it_files INTO DATA(ls_file).
       IF ls_file-deleted = abap_true.
         READ TABLE it_old_files INTO DATA(ls_old_file)
-          WITH KEY filename = ls_file-filename.
+          WITH KEY file COMPONENTS filename = ls_file-filename.
         IF sy-subrc = 0.
           ro_stage->rm(
             iv_path     = ls_old_file-path
@@ -146,10 +149,17 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
+* abapGit writes its XML files with a byte order mark, the other files without
+      IF ls_file-filename CP '*.xml'.
+        lv_data = zcl_abapgit_convert=>string_to_xstring_utf8_bom( ls_file-source ).
+      ELSE.
+        lv_data = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ).
+      ENDIF.
+
       ro_stage->add(
         iv_path     = |{ c_path }{ ls_file-path }|
         iv_filename = ls_file-filename
-        iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ) ).
+        iv_data     = lv_data ).
     ENDLOOP.
 
   ENDMETHOD.

@@ -131,24 +131,24 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
       ls_part-type = ms_tadir-object.
       ls_part-name = ms_tadir-obj_name.
       ls_part-devclass = ms_tadir-devclass.
-      APPEND ls_part TO rt_parts.
+      INSERT ls_part INTO TABLE rt_parts.
     ENDLOOP.
 
 * the local definitions are versioned as CDEF, and as CINC on some releases, like the other includes
     LOOP AT get_includes( ) INTO DATA(ls_include).
-      APPEND VALUE #(
+      INSERT VALUE #(
         objtype  = 'CINC'
         objname  = ls_include-objname
         type     = ms_tadir-object
         name     = ms_tadir-obj_name
-        devclass = ms_tadir-devclass ) TO rt_parts.
+        devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
       IF ls_include-extra = 'definitions'.
-        APPEND VALUE #(
+        INSERT VALUE #(
           objtype  = 'CDEF'
           objname  = ls_include-objname
           type     = ms_tadir-object
           name     = ms_tadir-obj_name
-          devclass = ms_tadir-devclass ) TO rt_parts.
+          devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
       ENDIF.
     ENDLOOP.
 
@@ -164,12 +164,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
       IF ls_method-objname(30) <> lv_class(30).
         CONTINUE.
       ENDIF.
-      APPEND VALUE #(
+      INSERT VALUE #(
         objtype  = ls_method-objtype
         objname  = ls_method-objname
         type     = ms_tadir-object
         name     = ms_tadir-obj_name
-        devclass = ms_tadir-devclass ) TO rt_parts.
+        devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
     ENDLOOP.
 
   ENDMETHOD.
@@ -409,7 +409,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
 
     rs_interfaces-names = it_interfaces.
     rs_interfaces-complete = abap_true.
-    APPEND LINES OF it_interfaces TO lt_todo.
+    INSERT LINES OF it_interfaces INTO TABLE lt_todo.
 
     WHILE lines( lt_todo ) > 0.
       DATA(lv_interface) = lt_todo[ 1 ].
@@ -430,7 +430,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
       LOOP AT zcl_abapgit_hist_clas_source=>parse_declarations( lv_source )-interfaces INTO DATA(lv_nested).
         INSERT lv_nested INTO TABLE rs_interfaces-names.
         IF sy-subrc = 0.
-          APPEND lv_nested TO lt_todo.
+          INSERT lv_nested INTO TABLE lt_todo.
         ENDIF.
       ENDLOOP.
     ENDWHILE.
@@ -540,16 +540,16 @@ CLASS ZCL_ABAPGIT_HISTORICAL_CLAS IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = get_file_name( )
-      deleted  = abap_true ) TO rt_files.
-    APPEND VALUE #(
+      deleted  = abap_true ) INTO TABLE rt_files.
+    INSERT VALUE #(
       filename = get_file_name( iv_ext = 'json' )
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
     LOOP AT get_includes( ) INTO DATA(ls_include).
-      APPEND VALUE #(
+      INSERT VALUE #(
         filename = get_file_name( iv_extra = ls_include-extra )
-        deleted  = abap_true ) TO rt_files.
+        deleted  = abap_true ) INTO TABLE rt_files.
     ENDLOOP.
 
   ENDMETHOD.

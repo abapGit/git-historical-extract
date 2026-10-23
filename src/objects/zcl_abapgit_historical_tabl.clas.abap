@@ -103,20 +103,20 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
 
   METHOD determine_parts.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'TABD'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
 * the technical settings are versioned as a sub object of their own
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'TABT'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
   ENDMETHOD.
 
@@ -127,9 +127,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       ( abap = zif_abapgit_hist_aff_tabt_v1=>co_size_category-undefined
         json = 'undefined' ) ).
     DO 10 TIMES.
-      APPEND VALUE #(
+      INSERT VALUE #(
         abap = |{ sy-index - 1 }|
-        json = |{ sy-index - 1 }| ) TO lt_size_categories.
+        json = |{ sy-index - 1 }| ) INTO TABLE lt_size_categories.
     ENDDO.
 
     rt_mappings = VALUE #(
@@ -355,19 +355,19 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       IF sy-subrc = 0.
         ls_dd03p-ddtext = ls_dd03tv-ddtext.
       ENDIF.
-      APPEND ls_dd03p TO rs_internal-dd03p.
+      INSERT ls_dd03p INTO TABLE rs_internal-dd03p.
     ENDLOOP.
 
     LOOP AT lt_dd05v INTO DATA(ls_dd05v).
       CLEAR ls_dd05m.
       MOVE-CORRESPONDING ls_dd05v TO ls_dd05m.
-      APPEND ls_dd05m TO rs_internal-dd05m.
+      INSERT ls_dd05m INTO TABLE rs_internal-dd05m.
     ENDLOOP.
 
     LOOP AT lt_dd36v INTO DATA(ls_dd36v).
       CLEAR ls_dd36m.
       MOVE-CORRESPONDING ls_dd36v TO ls_dd36m.
-      APPEND ls_dd36m TO rs_internal-dd36m.
+      INSERT ls_dd36m INTO TABLE rs_internal-dd36m.
     ENDLOOP.
 
 * the foreign key labels are kept in a text table of their own
@@ -378,7 +378,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       IF sy-subrc = 0.
         ls_dd08v-ddtext = ls_dd08tv-ddtext.
       ENDIF.
-      APPEND ls_dd08v TO rs_internal-dd08v.
+      INSERT ls_dd08v INTO TABLE rs_internal-dd08v.
     ENDLOOP.
 
     rs_internal-dd35v = lt_dd35v.
@@ -490,13 +490,13 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.json|
-      source   = serialize_aff( ls_internal ) ) TO rt_files.
+      source   = serialize_aff( ls_internal ) ) INTO TABLE rt_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.ddic|
-      source   = serialize_ddic( ls_internal ) ) TO rt_files.
+      source   = serialize_ddic( ls_internal ) ) INTO TABLE rt_files.
 
 * the settings file is optional, without a settings version in this transport the
 * file from an earlier transport stays as it is
@@ -510,26 +510,26 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TABL IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.settings.json|
-      source   = serialize_settings( ls_dd09v ) ) TO rt_files.
+      source   = serialize_settings( ls_dd09v ) ) INTO TABLE rt_files.
 
   ENDMETHOD.
 
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.json|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.ddic|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.tabl.settings.json|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.

@@ -67,12 +67,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
 
   METHOD determine_parts.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'INTF'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
   ENDMETHOD.
 
@@ -224,12 +224,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_INTF IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.intf.abap|
-      deleted  = abap_true ) TO rt_files.
-    APPEND VALUE #(
+      deleted  = abap_true ) INTO TABLE rt_files.
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.intf.json|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.
