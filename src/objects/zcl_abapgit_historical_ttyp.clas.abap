@@ -38,9 +38,7 @@ CLASS zcl_abapgit_historical_ttyp DEFINITION
       IMPORTING
         is_ttyp        TYPE ty_ttyp
       RETURNING
-        VALUE(rs_ttyp) TYPE ty_ttyp
-      RAISING
-        zcx_abapgit_exception .
+        VALUE(rs_ttyp) TYPE ty_ttyp .
 
     METHODS serialize_xml
       IMPORTING
@@ -83,7 +81,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TTYP IMPLEMENTATION.
     rs_ttyp = is_ttyp.
 
     IF rs_ttyp-dd40v-ddlanguage IS INITIAL.
-      zcx_abapgit_exception=>raise( |Original language is missing in table type { ms_tadir-obj_name }| ).
+      rs_ttyp-dd40v-ddlanguage = 'E'.
     ENDIF.
 
 * the same fields abapGit clears when it serializes a table type
