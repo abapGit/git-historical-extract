@@ -139,7 +139,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
     LOOP AT it_files INTO DATA(ls_file).
       IF ls_file-deleted = abap_true.
         READ TABLE it_old_files INTO DATA(ls_old_file)
-          WITH KEY filename = ls_file-filename.
+          WITH KEY file COMPONENTS filename = ls_file-filename.
         IF sy-subrc = 0.
           ro_stage->rm(
             iv_path     = ls_old_file-path
