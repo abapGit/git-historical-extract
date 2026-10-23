@@ -65,3 +65,14 @@ Not extracted:
 Known fidelity limit: a currency or quantity field whose reference points at another table
 is classified through `DDIF_FIELDINFO_GET` against the active dictionary, so the emitted
 type follows today's state of the referenced object rather than its state at that transport.
+
+## TTYP
+
+Table types are written as `<name>.ttyp.xml` in the format of abapGit's TTYP serializer, as neither
+abapGit nor the ABAP file formats have an AFF type for them. The definition, the description and
+the secondary key descriptions come from `SVRS_GET_VERSION_TTYD_40`.
+
+Not extracted:
+
+* the ABAP language version, which abapGit writes as `DD40L_EXTRA` for repositories that ask for it
+* long texts and translations

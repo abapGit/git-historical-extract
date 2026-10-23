@@ -49,15 +49,22 @@ Translations are out of scope for all object types. Extract language-dependent t
 
 ## TTYP
 
-- [ ] Confirm the VRSD component type and historical version reader for R3TR `TTYP` objects.
-- [ ] Add `zcl_abapgit_historical_ttyp` and its abapGit class XML, then register `TTYP` in the object factory.
-- [ ] Read the historical table-type header, line-type definition, access/table kind, primary key, secondary keys, and original-language description into an internal model.
-- [ ] Support elementary, structured, reference, and DDIC-object line types where the installed abapGit serializer supports them; fail clearly for unsupported variants.
-- [ ] Map and normalize the historical structures to the current abapGit TTYP representation, preserving explicit versus default key semantics.
-- [ ] Produce deterministic canonical output and skip the file when no historical version is available.
-- [ ] Emit the complete TTYP deletion file set.
-- [ ] Test standard/sorted/hashed types, unique and non-unique keys, default and explicit keys, reference line types, missing versions, and deletion.
-- [ ] Run abaplint and verify abapGit import plus serialize-back equivalence, after the referenced DOMA/DTEL/TABL objects are available.
+- **Required output:** `<object-name>.ttyp.xml` exactly as abapGit's `zcl_abapgit_object_ttyp` serializes it, with `DD40V`, `DD42V`, and `DD43V`. Neither abapGit nor the AFF specification has a file format for table types, so this is the one object type extracted as classic abapGit XML.
+- [x] Confirm the VRSD component type: `TTYD`, as listed next to `TABD` and `DTED` in abapGit's `zcl_abapgit_objects_activation`.
+- [x] Add `zcl_abapgit_historical_ttyp` and its abapGit class XML, then register `TTYD` in the object factory with the `TTYP` to `TTYD` translation in both the normal and the deleted-object paths.
+- [x] Read the historical version with `SVRS_GET_VERSION_TTYD_40`, signature confirmed on a system: `OBJECT_NAME` and `VERSNO`, the tables `DD40V_TAB`, `DD40TV_TAB` (`DD40TV`), `DD42V_TAB`, `DD43V_TAB`, and `DD43TV_TAB` (`DD43T`), and the exceptions `NO_VERSION`, `SYSTEM_FAILURE`, and `COMMUNICATION_FAILURE`.
+- [x] Merge the original-language texts into the structures abapGit writes: `DD40TV` into `DD40V-DDTEXT`, and `DD43T` into `DD43V-KEYDESCRIPTION` per secondary key; a key without a description in the original language is written without one.
+- [ ] Confirm on a system that the description component of `DD43T` is named `DDTEXT`.
+- [x] Support every line type, access mode, and key definition the version reader returns: the XML carries `DD40V` as it is, so elementary, structured, reference, range, and DDIC-object line types and explicit versus default keys need no mapping and nothing is rejected beyond a missing original language.
+- [x] Normalize as abapGit does: clear `AS4USER`, `AS4DATE`, `AS4TIME`, and `ACTFLAG`, and clear `TYPELEN` when a row kind is set; sort `DD42V` by secondary key name and key field position, primary key first, and `DD43V` by secondary key name, so the output does not depend on the reader's row order.
+- [x] Render through `zcl_abapgit_xml_output` with the `LCL_OBJECT_TTYP` serializer metadata and the `utf-8` declaration abapGit writes; the git stage adds the UTF-8 byte order mark to every `.xml` file, as abapGit's `add_xml( )` does.
+- [ ] Decide on `DD40L_EXTRA`: abapGit writes the ABAP language version there when the repository asks for it, the version reader is not known to return it, so it is never written.
+- [x] Return no file when the requested historical version does not exist, and raise a contextual exception for other version-reader failures.
+- [x] Emit `<object-name>.ttyp.xml` as the TTYP deletion file set.
+- [x] Test the normalization, key field and secondary key order, a missing original language, the serialized XML for default and explicit keys with a secondary key, and deletion.
+- [ ] Extend the tests to the cases that need either a system or a stubbed version reader: sorted and hashed types, reference line types, original-language texts, and a missing version.
+- [x] Run abaplint.
+- [ ] Verify abapGit import plus serialize-back equivalence, after the referenced DOMA/DTEL/TABL objects are available.
 
 ## INTF
 

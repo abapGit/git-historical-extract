@@ -132,6 +132,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
 
   METHOD build_stage.
 
+    DATA lv_data TYPE xstring.
+
     ro_stage = NEW zcl_abapgit_stage( ).
 
     LOOP AT it_files INTO DATA(ls_file).
@@ -146,10 +148,17 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
+* abapGit writes its XML files with a byte order mark, the other files without
+      IF ls_file-filename CP '*.xml'.
+        lv_data = zcl_abapgit_convert=>string_to_xstring_utf8_bom( ls_file-source ).
+      ELSE.
+        lv_data = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ).
+      ENDIF.
+
       ro_stage->add(
         iv_path     = |{ c_path }{ ls_file-path }|
         iv_filename = ls_file-filename
-        iv_data     = zcl_abapgit_convert=>string_to_xstring_utf8( ls_file-source ) ).
+        iv_data     = lv_data ).
     ENDLOOP.
 
   ENDMETHOD.

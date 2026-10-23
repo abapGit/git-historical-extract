@@ -50,6 +50,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         ri_object = NEW zcl_abapgit_historical_prog( is_tadir ).
       WHEN 'TABD'.
         ri_object = NEW zcl_abapgit_historical_tabl( is_tadir ).
+      WHEN 'TTYD'.
+        ri_object = NEW zcl_abapgit_historical_ttyp( is_tadir ).
       WHEN OTHERS.
         ASSERT 1 = 'todo'.
     ENDCASE.
@@ -70,6 +72,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DTED'.
       WHEN 'TABL'.
         lv_objtype = 'TABD'.
+      WHEN 'TTYP'.
+        lv_objtype = 'TTYD'.
     ENDCASE.
 
 * a class is versioned in parts only, there is no CLAS version to look for, the handler
@@ -109,6 +113,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'DTED'.
       WHEN 'TABL'.
         lv_objtype = 'TABD'.
+      WHEN 'TTYP'.
+        lv_objtype = 'TTYD'.
     ENDCASE.
 
     DATA(li_object) = create( VALUE #(
