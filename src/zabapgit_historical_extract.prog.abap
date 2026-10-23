@@ -38,10 +38,10 @@ FORM extract.
 
   TRY.
       IF p_skip = abap_false.
-        APPEND VALUE #(
+        INSERT VALUE #(
           tabname   = 'SPOP'
           fieldname = 'VARFIELD'
-          fieldtext = 'Token' ) TO lt_fields.
+          fieldtext = 'Token' ) INTO TABLE lt_fields.
         CALL FUNCTION 'POPUP_GET_VALUES'
           EXPORTING
             popup_title     = 'Enter GitHub Token'

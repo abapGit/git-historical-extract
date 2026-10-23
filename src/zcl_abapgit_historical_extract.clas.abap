@@ -135,7 +135,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_EXTRACT IMPLEMENTATION.
         LOOP AT lt_deleted_files INTO DATA(ls_deleted_file).
           ls_deleted_file-path = |{ lv_folder }/|.
           IF NOT line_exists( lt_files[ filename = ls_deleted_file-filename ] ).
-            APPEND ls_deleted_file TO lt_files.
+            INSERT ls_deleted_file INTO TABLE lt_files.
           ENDIF.
         ENDLOOP.
       ENDLOOP.

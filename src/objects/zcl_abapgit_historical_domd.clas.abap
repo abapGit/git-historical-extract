@@ -78,12 +78,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
 
   METHOD determine_parts.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'DOMD'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
   ENDMETHOD.
 
@@ -102,9 +102,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
       IF sy-subrc <> 0.
         CONTINUE.
       ENDIF.
-      APPEND VALUE #(
+      INSERT VALUE #(
         abap = <lv_value>
-        json = ls_component-name ) TO rt_mappings.
+        json = ls_component-name ) INTO TABLE rt_mappings.
     ENDLOOP.
 
   ENDMETHOD.
@@ -200,19 +200,19 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
       IF ls_dd07v-appval IS NOT INITIAL.
         IF ls_dd07v-domname IS NOT INITIAL
             AND NOT line_exists( rs_aff-fixed_value_appends[ name = ls_dd07v-domname ] ).
-          APPEND VALUE #( name = ls_dd07v-domname ) TO rs_aff-fixed_value_appends.
+          INSERT VALUE #( name = ls_dd07v-domname ) INTO TABLE rs_aff-fixed_value_appends.
         ENDIF.
         CONTINUE.
       ENDIF.
       IF ls_dd07v-domvalue_h IS INITIAL OR ls_dd07v-domvalue_h = ls_dd07v-domvalue_l.
-        APPEND VALUE #(
+        INSERT VALUE #(
           fixed_value = ls_dd07v-domvalue_l
-          description = ls_dd07v-ddtext ) TO rs_aff-fixed_values.
+          description = ls_dd07v-ddtext ) INTO TABLE rs_aff-fixed_values.
       ELSE.
-        APPEND VALUE #(
+        INSERT VALUE #(
           low_limit   = ls_dd07v-domvalue_l
           high_limit  = ls_dd07v-domvalue_h
-          description = ls_dd07v-ddtext ) TO rs_aff-fixed_value_intervals.
+          description = ls_dd07v-ddtext ) INTO TABLE rs_aff-fixed_value_intervals.
       ENDIF.
     ENDLOOP.
     SORT rs_aff-fixed_value_appends BY name.
@@ -282,7 +282,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
           ls_dd07v-ddtext = ls_dd07tv-ddtext.
         ENDIF.
       ENDIF.
-      APPEND ls_dd07v TO rs_domain-dd07v.
+      INSERT ls_dd07v INTO TABLE rs_domain-dd07v.
     ENDLOOP.
 
   ENDMETHOD.
@@ -348,9 +348,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DOMD IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.doma.json|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.

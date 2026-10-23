@@ -75,12 +75,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
 
   METHOD determine_parts.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'DTED'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
   ENDMETHOD.
 
@@ -114,9 +114,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
       IF sy-subrc <> 0.
         CONTINUE.
       ENDIF.
-      APPEND VALUE #(
+      INSERT VALUE #(
         abap = <lv_value>
-        json = ls_component-name ) TO rt_mappings.
+        json = ls_component-name ) INTO TABLE rt_mappings.
     ENDLOOP.
 
   ENDMETHOD.
@@ -318,9 +318,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
 * the predefinedType object only belongs to the built-in type categories, for the other
 * categories the initial length must be skipped too, so the empty object is dropped
     IF ls_aff-data_type_information-predefined_type-data_type IS INITIAL.
-      APPEND VALUE #(
+      INSERT VALUE #(
         path  = '/dataTypeInformation/predefinedType/length'
-        value = '0' ) TO lt_skip_paths.
+        value = '0' ) INTO TABLE lt_skip_paths.
     ENDIF.
 
     DATA(lt_enum_mappings) = VALUE zcl_abapgit_json_handler=>ty_enum_mappings(
@@ -377,9 +377,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_DTEL IMPLEMENTATION.
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.dtel.json|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.

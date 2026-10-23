@@ -93,13 +93,14 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
       IF lv_task_user IS NOT INITIAL.
         lv_task_line = |{ lv_task_line } ({ lv_task_user })|.
       ENDIF.
-      APPEND lv_task_line TO lt_task_lines.
+      INSERT lv_task_line INTO TABLE lt_task_lines.
 
       LOOP AT lt_task_objects INTO DATA(ls_task_object)
           WHERE trkorr = ls_task-trkorr.
         DATA(lv_task_object_name) = CONV string( ls_task_object-obj_name ).
         CONDENSE lv_task_object_name.
-        APPEND |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }| TO lt_task_lines.
+        INSERT |  - { ls_task_object-pgmid } { ls_task_object-object } { lv_task_object_name }|
+          INTO TABLE lt_task_lines.
       ENDLOOP.
     ENDLOOP.
 

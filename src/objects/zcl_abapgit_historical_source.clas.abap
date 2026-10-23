@@ -115,7 +115,7 @@ CLASS zcl_abapgit_historical_source IMPLEMENTATION.
       READ TABLE rt_vrsd ASSIGNING FIELD-SYMBOL(<ls_vrsd>)
         WITH KEY objtype = ls_row-objtype objname = ls_row-objname.
       IF sy-subrc <> 0.
-        APPEND INITIAL LINE TO rt_vrsd ASSIGNING <ls_vrsd>.
+        INSERT INITIAL LINE INTO TABLE rt_vrsd ASSIGNING <ls_vrsd>.
       ENDIF.
       <ls_vrsd> = CORRESPONDING #( ls_row ).
     ENDLOOP.

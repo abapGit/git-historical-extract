@@ -61,20 +61,20 @@ CLASS ltcl_tabl IMPLEMENTATION.
     rs_internal-dd02v-contflag   = 'A'.
     rs_internal-dd02v-exclass    = '1'.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       fieldname  = 'KEY_FIELD'
       keyflag    = abap_true
       adminfield = '0'
       notnull    = abap_true
       datatype   = 'CHAR'
       leng       = 10
-      ddtext     = 'Key field' ) TO rs_internal-dd03p.
-    APPEND VALUE #(
+      ddtext     = 'Key field' ) INTO TABLE rs_internal-dd03p.
+    INSERT VALUE #(
       fieldname  = 'VALUE'
       adminfield = '0'
       rollname   = 'ZTEST_DTEL'
       datatype   = 'CHAR'
-      leng       = 10 ) TO rs_internal-dd03p.
+      leng       = 10 ) INTO TABLE rs_internal-dd03p.
 
   ENDMETHOD.
 
@@ -85,28 +85,28 @@ CLASS ltcl_tabl IMPLEMENTATION.
 * that the whole internal structure reaches the abapGit serializer
     rs_internal = transparent_table( ).
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       fieldname  = 'VALUE'
       checktable = 'ZCHECK'
       cardleft   = '1'
-      card       = 'N' ) TO rs_internal-dd08v.
-    APPEND VALUE #(
+      card       = 'N' ) INTO TABLE rs_internal-dd08v.
+    INSERT VALUE #(
       fieldname  = 'VALUE'
       checktable = 'ZCHECK'
       checkfield = 'CHECK_KEY'
       fortable   = 'ZTEST_TABL'
       forkey     = 'VALUE'
-      primpos    = 1 ) TO rs_internal-dd05m.
-    APPEND VALUE #(
+      primpos    = 1 ) INTO TABLE rs_internal-dd05m.
+    INSERT VALUE #(
       fieldname = 'VALUE'
-      shlpname  = 'ZSHLP' ) TO rs_internal-dd35v.
-    APPEND VALUE #(
+      shlpname  = 'ZSHLP' ) INTO TABLE rs_internal-dd35v.
+    INSERT VALUE #(
       fieldname  = 'VALUE'
       shlpname   = 'ZSHLP'
       shlpfield  = 'SHLP_FIELD'
       shtable    = 'ZTEST_TABL'
       shfield    = 'VALUE'
-      flposition = 1 ) TO rs_internal-dd36m.
+      flposition = 1 ) INTO TABLE rs_internal-dd36m.
 
   ENDMETHOD.
 
@@ -180,18 +180,18 @@ CLASS ltcl_tabl IMPLEMENTATION.
 
     DATA lt_expected TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
 
-    APPEND `@EndUserText.label : 'Test table'` TO lt_expected.
-    APPEND `@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE` TO lt_expected.
-    APPEND `@AbapCatalog.tableCategory : #TRANSPARENT` TO lt_expected.
-    APPEND `@AbapCatalog.deliveryClass : #A` TO lt_expected.
-    APPEND `@AbapCatalog.dataMaintenance : #RESTRICTED` TO lt_expected.
-    APPEND `define table ztest_tabl {` TO lt_expected.
-    APPEND `` TO lt_expected.
-    APPEND `  @EndUserText.label : 'Key field'` TO lt_expected.
-    APPEND `  key key_field : abap.char(10) not null;` TO lt_expected.
-    APPEND `  value         : ztest_dtel;` TO lt_expected.
-    APPEND `` TO lt_expected.
-    APPEND `}` TO lt_expected.
+    INSERT `@EndUserText.label : 'Test table'` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.tableCategory : #TRANSPARENT` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.deliveryClass : #A` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.dataMaintenance : #RESTRICTED` INTO TABLE lt_expected.
+    INSERT `define table ztest_tabl {` INTO TABLE lt_expected.
+    INSERT `` INTO TABLE lt_expected.
+    INSERT `  @EndUserText.label : 'Key field'` INTO TABLE lt_expected.
+    INSERT `  key key_field : abap.char(10) not null;` INTO TABLE lt_expected.
+    INSERT `  value         : ztest_dtel;` INTO TABLE lt_expected.
+    INSERT `` INTO TABLE lt_expected.
+    INSERT `}` INTO TABLE lt_expected.
 
     cl_abap_unit_assert=>assert_equals(
       act = mo_cut->serialize_ddic( transparent_table( ) )
@@ -205,23 +205,23 @@ CLASS ltcl_tabl IMPLEMENTATION.
 
     DATA lt_expected TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
 
-    APPEND `@EndUserText.label : 'Test table'` TO lt_expected.
-    APPEND `@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE` TO lt_expected.
-    APPEND `@AbapCatalog.tableCategory : #TRANSPARENT` TO lt_expected.
-    APPEND `@AbapCatalog.deliveryClass : #A` TO lt_expected.
-    APPEND `@AbapCatalog.dataMaintenance : #RESTRICTED` TO lt_expected.
-    APPEND `define table ztest_tabl {` TO lt_expected.
-    APPEND `` TO lt_expected.
-    APPEND `  @EndUserText.label : 'Key field'` TO lt_expected.
-    APPEND `  key key_field : abap.char(10) not null;` TO lt_expected.
-    APPEND `  @AbapCatalog.foreignKey.screenCheck : true` TO lt_expected.
-    APPEND `  value         : ztest_dtel` TO lt_expected.
-    APPEND `    with foreign key [1..*,1] zcheck` TO lt_expected.
-    APPEND `      where check_key = ztest_tabl.value` TO lt_expected.
-    APPEND `    with value help zshlp` TO lt_expected.
-    APPEND `      where shlp_field = ztest_tabl.value;` TO lt_expected.
-    APPEND `` TO lt_expected.
-    APPEND `}` TO lt_expected.
+    INSERT `@EndUserText.label : 'Test table'` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.tableCategory : #TRANSPARENT` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.deliveryClass : #A` INTO TABLE lt_expected.
+    INSERT `@AbapCatalog.dataMaintenance : #RESTRICTED` INTO TABLE lt_expected.
+    INSERT `define table ztest_tabl {` INTO TABLE lt_expected.
+    INSERT `` INTO TABLE lt_expected.
+    INSERT `  @EndUserText.label : 'Key field'` INTO TABLE lt_expected.
+    INSERT `  key key_field : abap.char(10) not null;` INTO TABLE lt_expected.
+    INSERT `  @AbapCatalog.foreignKey.screenCheck : true` INTO TABLE lt_expected.
+    INSERT `  value         : ztest_dtel` INTO TABLE lt_expected.
+    INSERT `    with foreign key [1..*,1] zcheck` INTO TABLE lt_expected.
+    INSERT `      where check_key = ztest_tabl.value` INTO TABLE lt_expected.
+    INSERT `    with value help zshlp` INTO TABLE lt_expected.
+    INSERT `      where shlp_field = ztest_tabl.value;` INTO TABLE lt_expected.
+    INSERT `` INTO TABLE lt_expected.
+    INSERT `}` INTO TABLE lt_expected.
 
     cl_abap_unit_assert=>assert_equals(
       act = mo_cut->serialize_ddic( table_with_references( ) )
@@ -401,24 +401,24 @@ CLASS ltcl_tabl IMPLEMENTATION.
 
     DATA lt_expected TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
 
-    APPEND `{` TO lt_expected.
-    APPEND `  "formatVersion": "1",` TO lt_expected.
-    APPEND `  "generalInformation": {` TO lt_expected.
-    APPEND `    "dataClassCategory": "APPL1",` TO lt_expected.
-    APPEND `    "sizeCategory": "3",` TO lt_expected.
-    APPEND `    "logChanges": true,` TO lt_expected.
-    APPEND `    "translation": "standard"` TO lt_expected.
-    APPEND `  },` TO lt_expected.
-    APPEND `  "buffering": {` TO lt_expected.
-    APPEND `    "state": "switchedOn",` TO lt_expected.
-    APPEND `    "type": "generic",` TO lt_expected.
-    APPEND `    "nrOfKeyFlds4GenericBuff": 2` TO lt_expected.
-    APPEND `  },` TO lt_expected.
-    APPEND `  "dbSpecificSettings": {` TO lt_expected.
-    APPEND `    "storageType": "undefined"` TO lt_expected.
-    APPEND `  }` TO lt_expected.
-    APPEND `}` TO lt_expected.
-    APPEND `` TO lt_expected.
+    INSERT `{` INTO TABLE lt_expected.
+    INSERT `  "formatVersion": "1",` INTO TABLE lt_expected.
+    INSERT `  "generalInformation": {` INTO TABLE lt_expected.
+    INSERT `    "dataClassCategory": "APPL1",` INTO TABLE lt_expected.
+    INSERT `    "sizeCategory": "3",` INTO TABLE lt_expected.
+    INSERT `    "logChanges": true,` INTO TABLE lt_expected.
+    INSERT `    "translation": "standard"` INTO TABLE lt_expected.
+    INSERT `  },` INTO TABLE lt_expected.
+    INSERT `  "buffering": {` INTO TABLE lt_expected.
+    INSERT `    "state": "switchedOn",` INTO TABLE lt_expected.
+    INSERT `    "type": "generic",` INTO TABLE lt_expected.
+    INSERT `    "nrOfKeyFlds4GenericBuff": 2` INTO TABLE lt_expected.
+    INSERT `  },` INTO TABLE lt_expected.
+    INSERT `  "dbSpecificSettings": {` INTO TABLE lt_expected.
+    INSERT `    "storageType": "undefined"` INTO TABLE lt_expected.
+    INSERT `  }` INTO TABLE lt_expected.
+    INSERT `}` INTO TABLE lt_expected.
+    INSERT `` INTO TABLE lt_expected.
 
     cl_abap_unit_assert=>assert_equals(
       act = mo_cut->serialize_settings( technical_settings( ) )

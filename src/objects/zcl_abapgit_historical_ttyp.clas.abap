@@ -65,12 +65,12 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TTYP IMPLEMENTATION.
 
   METHOD determine_parts.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       objtype  = 'TTYD'
       objname  = ms_tadir-obj_name
       type     = ms_tadir-object
       name     = ms_tadir-obj_name
-      devclass = ms_tadir-devclass ) TO rt_parts.
+      devclass = ms_tadir-devclass ) INTO TABLE rt_parts.
 
   ENDMETHOD.
 
@@ -222,18 +222,18 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TTYP IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.ttyp.xml|
-      source   = serialize_xml( normalize( ls_ttyp ) ) ) TO rt_files.
+      source   = serialize_xml( normalize( ls_ttyp ) ) ) INTO TABLE rt_files.
 
   ENDMETHOD.
 
 
   METHOD zif_abapgit_historical_object~build_deleted_files.
 
-    APPEND VALUE #(
+    INSERT VALUE #(
       filename = |{ to_lower( ms_tadir-obj_name ) }.ttyp.xml|
-      deleted  = abap_true ) TO rt_files.
+      deleted  = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.
