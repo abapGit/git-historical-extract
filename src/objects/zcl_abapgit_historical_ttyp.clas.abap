@@ -167,7 +167,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_TTYP IMPLEMENTATION.
                  ddlanguage = rs_ttyp-dd40v-ddlanguage.
       IF sy-subrc = 0.
         <ls_dd43v>-ddlanguage = ls_dd43tv-ddlanguage.
-        <ls_dd43v>-keydescription = ls_dd43tv-ddtext.
+        <ls_dd43v>-keydescription = ls_dd43tv-keydescription.
       ELSEIF <ls_dd43v>-ddlanguage <> rs_ttyp-dd40v-ddlanguage.
         CLEAR: <ls_dd43v>-ddlanguage,
                <ls_dd43v>-keydescription.
