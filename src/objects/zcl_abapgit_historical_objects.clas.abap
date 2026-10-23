@@ -53,7 +53,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
       WHEN 'TTYD'.
         ri_object = NEW zcl_abapgit_historical_ttyp( is_tadir ).
       WHEN OTHERS.
-        ASSERT 1 = 'todo'.
+* not supported, return nothing
+        RETURN.
     ENDCASE.
 
   ENDMETHOD.
@@ -98,6 +99,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
     DATA(li_object) = create( VALUE #(
       obj_name = ls_vrsd-objname
       object   = ls_vrsd-objtype ) ).
+    IF li_object IS NOT BOUND.
+      RETURN.
+    ENDIF.
 
     rt_files = li_object->build_files( iv_korrnum ).
 
@@ -120,6 +124,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
     DATA(li_object) = create( VALUE #(
       obj_name = iv_objname
       object   = lv_objtype ) ).
+    IF li_object IS NOT BOUND.
+      RETURN.
+    ENDIF.
 
     rt_files = li_object->build_deleted_files( ).
 
