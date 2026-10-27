@@ -40,13 +40,17 @@ CLASS zcl_abapgit_historical_prog DEFINITION
       RAISING
         zcx_abapgit_exception .
 
+    METHODS get_original_language
+      IMPORTING
+        is_progdir         TYPE zif_abapgit_sap_report=>ty_progdir
+      RETURNING
+        VALUE(rv_language) TYPE sy-langu .
+
     METHODS normalize
       IMPORTING
         is_prog        TYPE ty_prog
       RETURNING
-        VALUE(rs_prog) TYPE ty_prog
-      RAISING
-        zcx_abapgit_exception .
+        VALUE(rs_prog) TYPE ty_prog .
 
     METHODS serialize_xml
       IMPORTING
@@ -92,13 +96,22 @@ CLASS ZCL_ABAPGIT_HISTORICAL_PROG IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_original_language.
+
+* a program without original language is taken as English
+    rv_language = is_progdir-rload.
+    IF rv_language IS INITIAL.
+      rv_language = 'E'.
+    ENDIF.
+
+  ENDMETHOD.
+
+
   METHOD normalize.
 
     rs_prog = is_prog.
 
-    IF rs_prog-progdir-rload IS INITIAL.
-      zcx_abapgit_exception=>raise( |Original language is missing in program { ms_tadir-obj_name }| ).
-    ENDIF.
+    rs_prog-progdir-rload = get_original_language( rs_prog-progdir ).
     IF rs_prog-progdir-name IS INITIAL.
       rs_prog-progdir-name = ms_tadir-obj_name.
     ENDIF.
@@ -231,10 +244,10 @@ CLASS ZCL_ABAPGIT_HISTORICAL_PROG IMPLEMENTATION.
     ls_prog-progdir = CORRESPONDING #( ls_program-trdir ).
 
     READ TABLE lt_snapshot INTO DATA(ls_rept) WITH KEY objtype = 'REPT'.
-    IF sy-subrc = 0 AND ls_prog-progdir-rload IS NOT INITIAL.
+    IF sy-subrc = 0.
       ls_prog-tpool = read_rept(
         is_vrsd     = ls_rept
-        iv_language = ls_prog-progdir-rload ).
+        iv_language = get_original_language( ls_prog-progdir ) ).
     ENDIF.
 
 * abapGit ends every source file with a newline

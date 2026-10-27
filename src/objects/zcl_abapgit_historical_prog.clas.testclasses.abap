@@ -9,11 +9,11 @@ CLASS ltcl_prog DEFINITION FINAL FOR TESTING
     DATA mo_cut TYPE REF TO zcl_abapgit_historical_prog.
 
     METHODS setup.
-    METHODS clears_volatile_fields FOR TESTING RAISING zcx_abapgit_exception.
-    METHODS defaults_program_name FOR TESTING RAISING zcx_abapgit_exception.
-    METHODS sorts_text_pool FOR TESTING RAISING zcx_abapgit_exception.
-    METHODS drops_empty_title FOR TESTING RAISING zcx_abapgit_exception.
-    METHODS requires_original_language FOR TESTING.
+    METHODS clears_volatile_fields FOR TESTING.
+    METHODS defaults_program_name FOR TESTING.
+    METHODS sorts_text_pool FOR TESTING.
+    METHODS drops_empty_title FOR TESTING.
+    METHODS defaults_original_language FOR TESTING.
     METHODS serializes_attributes FOR TESTING RAISING zcx_abapgit_exception.
     METHODS serializes_selection_texts FOR TESTING RAISING zcx_abapgit_exception.
     METHODS serializes_include FOR TESTING RAISING zcx_abapgit_exception.
@@ -172,17 +172,17 @@ CLASS ltcl_prog IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD requires_original_language.
+  METHOD defaults_original_language.
 
     DATA ls_prog TYPE zcl_abapgit_historical_prog=>ty_prog.
 
     ls_prog-progdir-name = 'ZTEST_PROG'.
 
-    TRY.
-        mo_cut->normalize( ls_prog ).
-        cl_abap_unit_assert=>fail( 'a program without original language must be rejected' ).
-      CATCH zcx_abapgit_exception ##NO_HANDLER.
-    ENDTRY.
+    ls_prog = mo_cut->normalize( ls_prog ).
+
+    cl_abap_unit_assert=>assert_equals(
+      act = ls_prog-progdir-rload
+      exp = 'E' ).
 
   ENDMETHOD.
 
