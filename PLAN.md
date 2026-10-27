@@ -111,15 +111,26 @@ Translations are out of scope for all object types. Extract language-dependent t
 
 ## PROG
 
+- **Required output:** `<object-name>.prog.abap` and `<object-name>.prog.xml` exactly as abapGit's `zcl_abapgit_object_prog` serializes them. abapGit has no AFF type for programs, so the classic XML is the format. For executable programs and module pools abapGit also writes `DYNPROS`, `CUA`, and `VARIS` into the XML and one `<object-name>.prog.screen_<dynnr>.abap` file per screen; those are deferred, see below.
 - [x] Baseline handler, factory routing, `REPS` source extraction, and main-file deletion exist.
-- [ ] Inventory the VRSD/LIMU components that belong to a full R3TR `PROG` on supported releases, including program attributes, text elements, selection texts, screens, GUI status, documentation, and variants where abapGit treats them as part of the program.
-- [ ] Reconstruct the program as of the transport by combining changed components with their latest preceding versions.
-- [ ] Harden `REPS` reading so a missing source does not create an empty `.prog.abap`, while genuine reader failures include object/version context.
-- [ ] Generate the canonical abapGit program metadata and original-language texts in addition to source, with volatile fields removed and entries sorted deterministically.
-- [ ] Add canonical auxiliary files for each supported screen, GUI status, documentation, or variant component; explicitly document any components deferred from the first implementation.
-- [ ] Extend deletion/staging so a deleted program removes dynamically named auxiliary files already present in the repository, not only `.prog.abap`.
-- [ ] Test executable reports and include programs, original-language text elements, screen/status changes, component deletion, missing versions, and whole-object deletion.
-- [ ] Run abaplint and verify a multi-transport PROG history through abapGit import and serialize-back comparison.
+- [x] Inventory the VRSD components of an R3TR `PROG`: `REPS` carries the source and, through the `TRDIR_TAB` of `SVRS_GET_REPS_FROM_OBJECT`, the program attributes; `REPT` the text pool with text symbols, selection texts, and the title; `DYNP` one screen each, named by the program padded to 40 characters plus the screen number; `CUAD` the GUI status; documentation and variants are versioned as objects of their own.
+- [x] Route `PROG` straight to its handler in `zcl_abapgit_historical_objects=>read( )` as for `CLAS`; VRSD has no `PROG` version, only the parts, so the generic version lookup never let a program through.
+- [x] Reconstruct the program as of the transport from the newest `REPS` and `REPT` versions released up to it, through `zcl_abapgit_historical_source=>read_snapshot( )`; skip the program when the transport carries neither part or when no source version exists.
+- [x] Harden `REPS` reading in `zcl_abapgit_historical_source=>read_program( )`: a missing version skips the program instead of writing an empty `.prog.abap`, and a reader failure or a version without attributes raises with object and version in the message.
+- [x] Map `TRDIR` to abapGit's `PROGDIR` and clear the same volatile fields abapGit's `read_progdir( )` clears; an empty original language `RLOAD` defaults to `E`, which also selects the text pool language; `UCCHECK` is kept, as abapGit writes it for repositories without an ABAP language version setting.
+- [ ] Confirm on a system that `TRDIR_TAB` is filled for every `REPS` version; today a version without attributes stops the extraction with an exception.
+- [ ] Decide on the `PROGDIR` fields that `TRDIR` does not carry — `SQLX`, `DBAPL`, `DBNA`, `CLAS`, and `OCCURS` — which are empty for ordinary programs and therefore never written.
+- [x] Read the text pool with `SVRS_GET_VERSION_REPT_40` into `TEXTPOOLT`, keep the original language only, drop a title without text, sort by ID and key as `READ TEXTPOOL` returns it, and move the dictionary reference flag of selection texts into `SPLIT` as abapGit's `add_tpool( )` does.
+- [ ] Confirm the signature of `SVRS_GET_VERSION_REPT_40` on a system. It is taken from public code calling it with `REPOT_TAB` typed `TEXTPOOLT` and the exceptions `NO_VERSION`, `SYSTEM_FAILURE`, and `COMMUNICATION_FAILURE`; whether `TEXTPOOLT` has a `LANGUAGE` column is not known, so it is read dynamically and every row is kept when it has none.
+- [x] Render through `zcl_abapgit_xml_output` with the `LCL_OBJECT_PROG` serializer metadata and the `utf-8` declaration abapGit writes.
+- [ ] Extract screens: `SVRS_GET_VERSION_DYNP_40` is only known to return the flow logic in `D022S_TAB`; abapGit writes the screen as `RPY_DYNPRO_READ` returns it (`RPY_DYHEAD`, containers, fields) plus a `.prog.screen_<dynnr>.abap` flow logic file, so the native `D020S`/`D021S` tables have to be converted the way `RPY_DYNPRO_READ` does. Until then a program with screens is extracted without them.
+- [ ] Extract the GUI status: the signature of `SVRS_GET_VERSION_CUAD_40` is not known; abapGit writes the `RSMPE_*` tables of `RS_CUA_INTERNAL_FETCH`.
+- [ ] Decide whether to extract `VARIS` (system variants `SAP&`/`CUS&` only) and the `RE` documentation abapGit writes as `LONGTEXTS`.
+- [ ] Extend deletion/staging so a deleted program removes the `.prog.screen_<dynnr>.abap` files once screens are extracted; today the deletion file set is `.prog.abap` and `.prog.xml`, which is every file written.
+- [x] Test the attribute normalization, original language, text pool order and title handling, selection text splitting, the serialized XML for an executable program and an include, and deletion.
+- [ ] Extend the tests to the cases that need either a system or a stubbed version reader: snapshots across transports with only `REPS` or only `REPT`, translated texts, and a missing version.
+- [x] Run abaplint.
+- [ ] Verify a multi-transport PROG history through abapGit import and serialize-back comparison.
 
 ## FUGR
 

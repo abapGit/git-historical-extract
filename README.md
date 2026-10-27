@@ -42,6 +42,19 @@ Not extracted:
 * descriptions of types declared in the class
 * text pools, documentation, long texts and translations
 
+## PROG
+
+Programs are written as `<name>.prog.abap` and `<name>.prog.xml` in the format of abapGit's PROG
+serializer, as there is no ABAP file format for programs. Like a class, a program is versioned in
+parts, so each transport rebuilds it from the newest source (`REPS`) and text pool (`REPT`)
+versions released up to it. The program attributes come with the source version, the text pool
+from `SVRS_GET_VERSION_REPT_40`, whose signature is not confirmed on a system yet.
+
+Not extracted:
+
+* screens and GUI status, so a program with screens is written without `DYNPROS`, `CUA` and the `.prog.screen_<dynnr>.abap` files
+* variants, documentation, long texts and translations
+
 ## TABL
 
 Tables are written as the ABAP file format pair `<name>.tabl.json` and `<name>.tabl.ddic`,
