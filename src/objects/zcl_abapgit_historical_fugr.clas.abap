@@ -510,14 +510,17 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
 
 * the includes reachable through INCLUDE statements as of the transport, as RS_GET_ALL_INCLUDES
 * returns them, plus the include of a maintenance view which abapGit always adds
+* several sources can include the same include, INSERT LINES OF dumps on the duplicate key
     LOOP AT it_sources INTO DATA(lv_source).
-      INSERT LINES OF zcl_abapgit_hist_fugr_source=>parse_includes( lv_source ) INTO TABLE lt_found.
+      LOOP AT zcl_abapgit_hist_fugr_source=>parse_includes( lv_source ) INTO DATA(lv_name).
+        INSERT lv_name INTO TABLE lt_found.
+      ENDLOOP.
     ENDLOOP.
     INSERT |{ zcl_abapgit_hist_fugr_source=>get_include_prefix( mv_group ) }T00| INTO TABLE lt_found.
 
     DO.
       CLEAR lt_new.
-      LOOP AT lt_found INTO DATA(lv_name).
+      LOOP AT lt_found INTO lv_name.
         INSERT lv_name INTO TABLE lt_done.
         IF sy-subrc = 0
             AND lv_name <> mv_main
@@ -558,8 +561,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
         ls_include-program-source = zcl_abapgit_hist_fugr_source=>strip_generation_comments(
           ls_include-program-source ).
         INSERT ls_include INTO TABLE rt_includes.
-        INSERT LINES OF zcl_abapgit_hist_fugr_source=>parse_includes( ls_include-program-source )
-          INTO TABLE lt_found.
+        LOOP AT zcl_abapgit_hist_fugr_source=>parse_includes( ls_include-program-source ) INTO DATA(lv_found).
+          INSERT lv_found INTO TABLE lt_found.
+        ENDLOOP.
       ENDLOOP.
     ENDDO.
 
