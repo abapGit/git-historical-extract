@@ -272,6 +272,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
 
     DATA lt_names    TYPE STANDARD TABLE OF tfdir-funcname WITH EMPTY KEY.
     DATA lt_existing TYPE SORTED TABLE OF tfdir-funcname WITH UNIQUE KEY table_line.
+    DATA lt_objnames TYPE STANDARD TABLE OF vrsd-objname WITH EMPTY KEY.
     DATA lt_versions TYPE SORTED TABLE OF zif_abapgit_historical_object=>ty_vrsd
       WITH NON-UNIQUE KEY objname versno.
     DATA lt_newest   TYPE SORTED TABLE OF zif_abapgit_historical_object=>ty_vrsd
@@ -302,11 +303,13 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    IF lines( lt_names ) > 0.
+* FOR ALL ENTRIES needs the type of the column, which differs between TFDIR and VRSD
+    lt_objnames = lt_names.
+    IF lines( lt_objnames ) > 0.
       SELECT objtype, objname, versno, korrnum FROM vrsd INTO CORRESPONDING FIELDS OF TABLE @lt_versions
-        FOR ALL ENTRIES IN @lt_names
+        FOR ALL ENTRIES IN @lt_objnames
         WHERE objtype = 'FUNC'
-        AND objname = @lt_names-table_line.
+        AND objname = @lt_objnames-table_line.
     ENDIF.
 
 * rows come in ascending version order, so the last row kept per function module is its newest version
