@@ -67,7 +67,7 @@ the newest version of every part released up to it. The function modules are rea
 
 The members are taken from history rather than from today's state. The includes are found by
 following the `INCLUDE` statements of the historical sources, starting at the main program. The
-function modules are the current ones plus those deleted since, each kept as long as its version
+function modules are the current ones plus the `Z*` and `Y*` ones deleted since, each kept as long as its version
 names the group and no later request recorded it without versioning it, which is what deleting it
 leaves behind. Every transport first removes all files of the group and then writes the members
 again, so includes and function modules dropped since disappear in the same commit.

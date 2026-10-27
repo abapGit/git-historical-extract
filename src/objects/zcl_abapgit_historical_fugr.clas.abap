@@ -279,7 +279,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
       WITH UNIQUE KEY objname.
     DATA lt_deleted  TYPE ty_deleted_functions.
 
-* read once per run: the function modules recorded in a request that do not exist anymore,
+* read once per run: the custom function modules recorded in a request that do not exist anymore,
 * each with the group of its newest version
     IF gv_deleted_functions_read = abap_true.
       rt_functions = gt_deleted_functions.
@@ -289,6 +289,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
     SELECT DISTINCT obj_name FROM e071 INTO TABLE @DATA(lt_recorded)
       WHERE pgmid = 'LIMU'
       AND object = 'FUNC'
+      AND ( obj_name LIKE 'Z%' OR obj_name LIKE 'Y%' )
       ORDER BY obj_name.
     LOOP AT lt_recorded INTO DATA(lv_recorded).
       INSERT CONV tfdir-funcname( lv_recorded ) INTO TABLE lt_names.
