@@ -354,7 +354,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
       ORDER BY funcname.
     LOOP AT lt_current INTO DATA(lv_current).
       INSERT VALUE #(
-        funcname = to_upper( lv_current )
+        funcname = to_upper( lv_current-funcname )
         area     = mv_group ) INTO TABLE rt_functions.
     ENDLOOP.
 
@@ -698,6 +698,18 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_abapgit_historical_object~build_deleted_files.
+
+* the member files are named after includes and function modules, which are only known from
+* the repository once the group is gone
+    INSERT VALUE #(
+      filename = build_file_prefix( )
+      deleted  = abap_true
+      prefix   = abap_true ) INTO TABLE rt_files.
+
+  ENDMETHOD.
+
+
   METHOD zif_abapgit_historical_object~build_files.
 
     DATA lt_sources TYPE string_table.
@@ -782,18 +794,6 @@ CLASS ZCL_ABAPGIT_HISTORICAL_FUGR IMPLEMENTATION.
                                   iv_ext   = 'abap' )
         source   = |{ ls_module-source }\n| ) INTO TABLE rt_files.
     ENDLOOP.
-
-  ENDMETHOD.
-
-
-  METHOD zif_abapgit_historical_object~build_deleted_files.
-
-* the member files are named after includes and function modules, which are only known from
-* the repository once the group is gone
-    INSERT VALUE #(
-      filename = build_file_prefix( )
-      deleted  = abap_true
-      prefix   = abap_true ) INTO TABLE rt_files.
 
   ENDMETHOD.
 ENDCLASS.
