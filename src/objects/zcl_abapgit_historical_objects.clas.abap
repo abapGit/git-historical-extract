@@ -77,9 +77,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'TTYD'.
     ENDCASE.
 
-* a class is versioned in parts only, there is no CLAS version to look for, the handler
-* checks itself whether the transport carries any of its parts
-    IF lv_objtype = 'CLAS'.
+* classes and programs are versioned in parts only, there is no CLAS or PROG version to look
+* for, the handler checks itself whether the transport carries any of its parts
+    IF lv_objtype = 'CLAS' OR lv_objtype = 'PROG'.
       rt_files = create( VALUE #(
         obj_name = iv_objname
         object   = lv_objtype ) )->build_files( iv_korrnum ).

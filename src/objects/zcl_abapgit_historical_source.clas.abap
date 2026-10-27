@@ -1,6 +1,12 @@
 CLASS zcl_abapgit_historical_source DEFINITION PUBLIC.
   PUBLIC SECTION.
 
+    TYPES:
+      BEGIN OF ty_program,
+        source TYPE string,
+        trdir  TYPE trdir,
+      END OF ty_program .
+
     CLASS-METHODS read_versions
       IMPORTING
         it_parts       TYPE zif_abapgit_historical_object=>ty_parts_tt
@@ -22,6 +28,15 @@ CLASS zcl_abapgit_historical_source DEFINITION PUBLIC.
         is_vrsd          TYPE zif_abapgit_historical_object=>ty_vrsd
       RETURNING
         VALUE(rv_source) TYPE string .
+
+* the source and the attributes of a program version, initial when the version does not exist
+    CLASS-METHODS read_program
+      IMPORTING
+        is_vrsd           TYPE zif_abapgit_historical_object=>ty_vrsd
+      RETURNING
+        VALUE(rs_program) TYPE ty_program
+      RAISING
+        zcx_abapgit_exception .
 
   PROTECTED SECTION.
 ENDCLASS.
@@ -49,6 +64,41 @@ CLASS zcl_abapgit_historical_source IMPLEMENTATION.
       rv_source = concat_lines_of( table = lt_repos
                                    sep   = |\n| ).
     ENDIF.
+
+  ENDMETHOD.
+
+  METHOD read_program.
+
+    DATA lt_repos TYPE STANDARD TABLE OF abaptxt255 WITH EMPTY KEY.
+    DATA lt_trdir TYPE STANDARD TABLE OF trdir WITH EMPTY KEY.
+
+* unlike read_reps( ) a reader failure is not taken as a missing version
+    CALL FUNCTION 'SVRS_GET_REPS_FROM_OBJECT'
+      EXPORTING
+        object_name = is_vrsd-objname
+        object_type = is_vrsd-objtype
+        versno      = is_vrsd-versno
+      TABLES
+        repos_tab   = lt_repos
+        trdir_tab   = lt_trdir
+      EXCEPTIONS
+        no_version  = 1
+        OTHERS      = 2.
+    IF sy-subrc = 1.
+      RETURN.
+    ELSEIF sy-subrc <> 0.
+      zcx_abapgit_exception=>raise( |Unable to read historical { is_vrsd-objtype } { is_vrsd-objname } | &&
+        |version { is_vrsd-versno }, subrc { sy-subrc }| ).
+    ENDIF.
+
+    READ TABLE lt_trdir INTO rs_program-trdir INDEX 1.
+    IF sy-subrc <> 0.
+      zcx_abapgit_exception=>raise(
+        |Program attributes missing in historical { is_vrsd-objtype } { is_vrsd-objname } version { is_vrsd-versno }| ).
+    ENDIF.
+
+    rs_program-source = concat_lines_of( table = lt_repos
+                                         sep   = |\n| ).
 
   ENDMETHOD.
 
