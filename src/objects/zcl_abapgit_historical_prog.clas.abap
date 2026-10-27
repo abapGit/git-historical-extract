@@ -31,15 +31,6 @@ CLASS zcl_abapgit_historical_prog DEFINITION
       RETURNING
         VALUE(rv_filename) TYPE string .
 
-    METHODS read_rept
-      IMPORTING
-        is_vrsd         TYPE zif_abapgit_historical_object=>ty_vrsd
-        iv_language     TYPE sy-langu
-      RETURNING
-        VALUE(rt_tpool) TYPE textpool_table
-      RAISING
-        zcx_abapgit_exception .
-
     METHODS get_original_language
       IMPORTING
         is_progdir         TYPE zif_abapgit_sap_report=>ty_progdir
@@ -109,110 +100,34 @@ CLASS ZCL_ABAPGIT_HISTORICAL_PROG IMPLEMENTATION.
 
   METHOD normalize.
 
-    rs_prog = is_prog.
+    rs_prog-progdir = zcl_abapgit_historical_program=>normalize_progdir( is_prog-progdir ).
+    rs_prog-tpool = zcl_abapgit_historical_program=>normalize_textpool( is_prog-tpool ).
 
     rs_prog-progdir-rload = get_original_language( rs_prog-progdir ).
     IF rs_prog-progdir-name IS INITIAL.
       rs_prog-progdir-name = ms_tadir-obj_name.
     ENDIF.
 
-* the same fields abapGit clears when it reads the program attributes
-    CLEAR: rs_prog-progdir-edtx,
-           rs_prog-progdir-cnam,
-           rs_prog-progdir-cdat,
-           rs_prog-progdir-unam,
-           rs_prog-progdir-udat,
-           rs_prog-progdir-levl,
-           rs_prog-progdir-vern,
-           rs_prog-progdir-rmand,
-           rs_prog-progdir-sdate,
-           rs_prog-progdir-stime,
-           rs_prog-progdir-idate,
-           rs_prog-progdir-itime,
-           rs_prog-progdir-varcl,
-           rs_prog-progdir-state.
-
-* abapGit drops a title without text, and the text pool comes sorted as READ TEXTPOOL returns it
-    DELETE rs_prog-tpool WHERE id = 'R' AND key IS INITIAL AND length = 0.
-    SORT rs_prog-tpool BY id key.
-
-  ENDMETHOD.
-
-
-  METHOD read_rept.
-
-    DATA lt_textpoolt TYPE STANDARD TABLE OF textpoolt WITH DEFAULT KEY.
-
-    FIELD-SYMBOLS <lv_language> TYPE any.
-
-
-    CALL FUNCTION 'SVRS_GET_VERSION_REPT_40'
-      EXPORTING
-        object_name           = is_vrsd-objname
-        versno                = is_vrsd-versno
-      TABLES
-        repot_tab             = lt_textpoolt
-      EXCEPTIONS
-        no_version            = 1
-        system_failure        = 2
-        communication_failure = 3
-        OTHERS                = 4.
-    IF sy-subrc = 1.
-      RETURN.
-    ELSEIF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise(
-        |Unable to read historical REPT { is_vrsd-objname } version { is_vrsd-versno }, subrc { sy-subrc }| ).
-    ENDIF.
-
-* only the original language is extracted, translations are out of scope. The language is
-* read dynamically, it is not confirmed on a system that TEXTPOOLT carries one
-    LOOP AT lt_textpoolt ASSIGNING FIELD-SYMBOL(<ls_textpoolt>).
-      ASSIGN COMPONENT 'LANGUAGE' OF STRUCTURE <ls_textpoolt> TO <lv_language>.
-      IF sy-subrc = 0 AND <lv_language> <> iv_language.
-        CONTINUE.
-      ENDIF.
-      INSERT CORRESPONDING textpool( <ls_textpoolt> ) INTO TABLE rt_tpool.
-    ENDLOOP.
-
   ENDMETHOD.
 
 
   METHOD serialize_xml.
 
-    DATA lt_tpool TYPE zif_abapgit_lang_definitions=>ty_tpool_tt.
-
-
 * the file is written as zcl_abapgit_object_prog serializes it, the screens and the
 * GUI status which abapGit adds for executable programs and module pools are not extracted
     DATA(li_xml) = CAST zif_abapgit_xml_output( NEW zcl_abapgit_xml_output( ) ).
 
-    li_xml->add( iv_name = 'PROGDIR'
-                 ig_data = is_prog-progdir ).
+    zcl_abapgit_historical_program=>add_program(
+      ii_xml     = li_xml
+      is_progdir = is_prog-progdir
+      it_tpool   = is_prog-tpool ).
 
-* a selection text keeps its dictionary reference flag in the first eight characters,
-* abapGit moves them to SPLIT
-    LOOP AT is_prog-tpool INTO DATA(ls_tpool).
-      INSERT INITIAL LINE INTO TABLE lt_tpool ASSIGNING FIELD-SYMBOL(<ls_tpool>).
-      MOVE-CORRESPONDING ls_tpool TO <ls_tpool>.
-      IF <ls_tpool>-id = 'S'.
-        <ls_tpool>-split = <ls_tpool>-entry.
-        <ls_tpool>-entry = <ls_tpool>-entry+8.
-      ENDIF.
-    ENDLOOP.
-    li_xml->add( iv_name = 'TPOOL'
-                 ig_data = lt_tpool ).
-
-    rv_xml = li_xml->render( is_metadata = VALUE #(
-      class   = 'LCL_OBJECT_PROG'
-      version = 'v1.0.0' ) ).
-
-    REPLACE FIRST OCCURRENCE
-      OF REGEX '<\?xml version="1\.0" encoding="[\w-]+"\?>'
-      IN rv_xml
-      WITH '<?xml version="1.0" encoding="utf-8"?>' ##REGEX_POSIX.
-    IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |XML declaration missing in program { ms_tadir-obj_name }| ).
-    ENDIF.
+    rv_xml = zcl_abapgit_historical_program=>render(
+      ii_xml      = li_xml
+      is_metadata = VALUE #(
+        class   = 'LCL_OBJECT_PROG'
+        version = 'v1.0.0' )
+      iv_name     = |program { ms_tadir-obj_name }| ).
 
   ENDMETHOD.
 
@@ -245,7 +160,7 @@ CLASS ZCL_ABAPGIT_HISTORICAL_PROG IMPLEMENTATION.
 
     READ TABLE lt_snapshot INTO DATA(ls_rept) WITH KEY objtype = 'REPT'.
     IF sy-subrc = 0.
-      ls_prog-tpool = read_rept(
+      ls_prog-tpool = zcl_abapgit_historical_program=>read_textpool(
         is_vrsd     = ls_rept
         iv_language = get_original_language( ls_prog-progdir ) ).
     ENDIF.

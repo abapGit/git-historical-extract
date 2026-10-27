@@ -55,6 +55,33 @@ Not extracted:
 * screens and GUI status, so a program with screens is written without `DYNPROS`, `CUA` and the `.prog.screen_<dynnr>.abap` files
 * variants, documentation, long texts and translations
 
+## FUGR
+
+Function groups are written in the format of abapGit's FUGR serializer: `<name>.fugr.xml` with the
+short text, the include list and the function module interfaces, `<name>.fugr.<include>.abap` and
+`.xml` for the main program and every include, and `<name>.fugr.<function>.abap` for every function
+module. A function group is versioned in parts, the main program and the includes as `REPS`, the
+text pool as `REPT` and every function module as `FUNC`, so each transport rebuilds the group from
+the newest version of every part released up to it. The function modules are read through
+`SVRS_GET_VERSION_FUNC_40`, whose signature is not confirmed on a system yet.
+
+The members are taken from history rather than from today's state. The includes are found by
+following the `INCLUDE` statements of the historical sources, starting at the main program. The
+function modules are the current ones plus the `Z*` and `Y*` ones deleted since, each kept as long as its version
+names the group and no later request recorded it without versioning it, which is what deleting it
+leaves behind. Every transport first removes all files of the group and then writes the members
+again, so includes and function modules dropped since disappear in the same commit.
+
+Not extracted:
+
+* screens and GUI status, so a group with screens is written without `DYNPROS` and `CUA`
+* documentation, long texts and translations
+* the short text of the group is not versioned, it is today's text in the original language
+* a function module moved to another group since is only found in its current group
+
+A transport that only deletes a function module carries no part abapGit can map to the group, so the
+deletion shows up with the next transport that changes the group.
+
 ## TABL
 
 Tables are written as the ABAP file format pair `<name>.tabl.json` and `<name>.tabl.ddic`,

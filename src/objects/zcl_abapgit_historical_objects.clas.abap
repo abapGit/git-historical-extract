@@ -44,6 +44,8 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         ri_object = NEW zcl_abapgit_historical_domd( is_tadir ).
       WHEN 'DTED'.
         ri_object = NEW zcl_abapgit_historical_dtel( is_tadir ).
+      WHEN 'FUGR'.
+        ri_object = NEW zcl_abapgit_historical_fugr( is_tadir ).
       WHEN 'INTF'.
         ri_object = NEW zcl_abapgit_historical_intf( is_tadir ).
       WHEN 'PROG'.
@@ -77,9 +79,9 @@ CLASS ZCL_ABAPGIT_HISTORICAL_OBJECTS IMPLEMENTATION.
         lv_objtype = 'TTYD'.
     ENDCASE.
 
-* classes and programs are versioned in parts only, there is no CLAS or PROG version to look
-* for, the handler checks itself whether the transport carries any of its parts
-    IF lv_objtype = 'CLAS' OR lv_objtype = 'PROG'.
+* classes, programs and function groups are versioned in parts only, there is no CLAS, PROG or
+* FUGR version to look for, the handler checks itself whether the transport carries any of its parts
+    IF lv_objtype = 'CLAS' OR lv_objtype = 'PROG' OR lv_objtype = 'FUGR'.
       rt_files = create( VALUE #(
         obj_name = iv_objname
         object   = lv_objtype ) )->build_files( iv_korrnum ).
