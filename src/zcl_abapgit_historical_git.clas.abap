@@ -137,9 +137,20 @@ CLASS ZCL_ABAPGIT_HISTORICAL_GIT IMPLEMENTATION.
 
     ro_stage = NEW zcl_abapgit_stage( ).
 
+* files are staged in the given order, so a file added after a deletion of its prefix stays
     LOOP AT it_files INTO DATA(ls_file).
-      IF ls_file-deleted = abap_true.
-        READ TABLE it_old_files INTO DATA(ls_old_file)
+      IF ls_file-deleted = abap_true AND ls_file-prefix = abap_true.
+        LOOP AT it_old_files INTO DATA(ls_old_file).
+          IF find( val = ls_old_file-filename
+                   sub = ls_file-filename ) = 0.
+            ro_stage->rm(
+              iv_path     = ls_old_file-path
+              iv_filename = ls_old_file-filename ).
+          ENDIF.
+        ENDLOOP.
+        CONTINUE.
+      ELSEIF ls_file-deleted = abap_true.
+        READ TABLE it_old_files INTO ls_old_file
           WITH KEY file COMPONENTS filename = ls_file-filename.
         IF sy-subrc = 0.
           ro_stage->rm(

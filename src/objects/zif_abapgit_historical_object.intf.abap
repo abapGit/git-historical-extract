@@ -19,6 +19,9 @@ INTERFACE zif_abapgit_historical_object PUBLIC.
       datum   TYPE vrsd-datum,
       zeit    TYPE vrsd-zeit,
       source  TYPE string,
+* the release of the request, only filled by zcl_abapgit_historical_source=>read_snapshot( )
+      as4date TYPE e070-as4date,
+      as4time TYPE e070-as4time,
     END OF ty_vrsd .
   TYPES ty_vrsd_tt TYPE STANDARD TABLE OF ty_vrsd WITH EMPTY KEY .
 

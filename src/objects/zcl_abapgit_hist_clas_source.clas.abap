@@ -51,14 +51,16 @@ CLASS zcl_abapgit_hist_clas_source DEFINITION
       RETURNING
         VALUE(rv_source) TYPE string .
 
-  PROTECTED SECTION.
-  PRIVATE SECTION.
-
+* the source with comments dropped and every literal replaced by the word LITERAL, so that
+* periods, commas and colons only remain as statement delimiters
     CLASS-METHODS remove_comments_and_literals
       IMPORTING
         iv_source       TYPE string
       RETURNING
         VALUE(rv_clean) TYPE string .
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
 ENDCLASS.
 
 

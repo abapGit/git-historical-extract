@@ -6,6 +6,12 @@ CLASS zcl_abapgit_historical_source DEFINITION PUBLIC.
         source TYPE string,
         trdir  TYPE trdir,
       END OF ty_program .
+    TYPES:
+      BEGIN OF ty_release,
+        trkorr  TYPE e070-trkorr,
+        as4date TYPE e070-as4date,
+        as4time TYPE e070-as4time,
+      END OF ty_release .
 
     CLASS-METHODS read_versions
       IMPORTING
@@ -37,6 +43,22 @@ CLASS zcl_abapgit_historical_source DEFINITION PUBLIC.
         VALUE(rs_program) TYPE ty_program
       RAISING
         zcx_abapgit_exception .
+
+* the release of a request, initial when the request does not exist
+    CLASS-METHODS read_release
+      IMPORTING
+        iv_trkorr         TYPE e070-trkorr
+      RETURNING
+        VALUE(rs_release) TYPE ty_release .
+
+* true when the request is released after the reference, in the order the extraction
+* processes transports: by release date, time, and request number
+    CLASS-METHODS is_released_after
+      IMPORTING
+        is_release      TYPE ty_release
+        is_reference    TYPE ty_release
+      RETURNING
+        VALUE(rv_after) TYPE abap_bool .
 
   PROTECTED SECTION.
 ENDCLASS.
@@ -118,6 +140,25 @@ CLASS zcl_abapgit_historical_source IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD read_release.
+
+    SELECT SINGLE trkorr, as4date, as4time FROM e070 INTO @rs_release
+      WHERE trkorr = @iv_trkorr.
+    IF sy-subrc <> 0.
+      CLEAR rs_release.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD is_released_after.
+
+    rv_after = xsdbool( is_release-as4date > is_reference-as4date
+      OR ( is_release-as4date = is_reference-as4date AND is_release-as4time > is_reference-as4time )
+      OR ( is_release-as4date = is_reference-as4date AND is_release-as4time = is_reference-as4time
+        AND is_release-trkorr > is_reference-trkorr ) ).
+
+  ENDMETHOD.
+
   METHOD read_snapshot.
 
     TYPES:
@@ -138,9 +179,8 @@ CLASS zcl_abapgit_historical_source IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT SINGLE as4date, as4time FROM e070 INTO @DATA(ls_transport)
-      WHERE trkorr = @iv_korrnum.
-    IF sy-subrc <> 0.
+    DATA(ls_transport) = read_release( iv_korrnum ).
+    IF ls_transport IS INITIAL.
       RETURN.
     ENDIF.
 
@@ -155,10 +195,12 @@ CLASS zcl_abapgit_historical_source IMPLEMENTATION.
 
 * same order as the extraction processes transports in, so later transports never leak in
     LOOP AT lt_rows INTO DATA(ls_row).
-      IF ls_row-as4date > ls_transport-as4date
-          OR ( ls_row-as4date = ls_transport-as4date AND ls_row-as4time > ls_transport-as4time )
-          OR ( ls_row-as4date = ls_transport-as4date AND ls_row-as4time = ls_transport-as4time
-            AND ls_row-korrnum > iv_korrnum ).
+      IF is_released_after(
+          is_release   = VALUE #(
+            trkorr  = ls_row-korrnum
+            as4date = ls_row-as4date
+            as4time = ls_row-as4time )
+          is_reference = ls_transport ) = abap_true.
         CONTINUE.
       ENDIF.
 * rows come in ascending version order, so the last row kept per part is its newest version
